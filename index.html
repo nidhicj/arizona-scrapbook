@@ -328,7 +328,7 @@ function loadPic(p) {
     let blob;
     try { blob = await idb.get('pic:' + p); } catch (e) {}
     if (!blob && token) {
-      try { const r = await gh(p, {headers: {Accept: 'application/vnd.github.raw'}}); if (r.ok) { blob = await r.blob(); idb.set('pic:' + p, blob).catch(() => {}); } } catch (e) {}
+      try { const r = await gh(p, {headers: {Accept: 'application/vnd.github.raw'}}); if (r.ok) { blob = new Blob([await r.blob()], {type: 'image/' + p.split('.').pop()}); idb.set('pic:' + p, blob).catch(() => {}); } } catch (e) {}
     }
     if (!blob) { delete picLoading[p]; return; }
     PIC[p] = URL.createObjectURL(blob);
