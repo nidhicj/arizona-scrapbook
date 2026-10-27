@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e8763f">
+<title>Arizona Scrapbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,500;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sand:#f4e7d3; --paper:#fffaf2; --ink:#3a2a1f; --muted:#8a7360; --line:#e7d6bd;
+  --terra:#c4532d; --sun:#e8913a; --sage:#6f8a5c; --rose:#d0607a;
+  --hand:'Caveat',cursive; --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  background:var(--sand);
+  background-image:radial-gradient(rgba(140,100,60,.09) 1px,transparent 1px);
+  background-size:14px 14px;
+  color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;
+  padding-bottom:110px;
+}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,textarea,select{font:inherit;color:var(--ink)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;overflow:hidden;color:#fff;padding:28px 18px 92px;
+  background:linear-gradient(180deg,#f9c46b 0%,#f39a5b 38%,#e0673f 70%,#b8452a 100%)}
+.hero .sunball{position:absolute;width:150px;height:150px;border-radius:50%;right:12%;bottom:40px;
+  background:radial-gradient(circle,#fff3c4 0%,#ffd88a 55%,rgba(255,216,138,0) 72%)}
+.hero svg{position:absolute;left:0;right:0;bottom:-1px;width:100%;height:110px}
+.hero-inner{position:relative;max-width:760px;margin:0 auto}
+.kicker{font-family:var(--hand);font-size:24px;opacity:.95;margin:0}
+.hero h1{font-family:var(--serif);font-weight:800;font-size:clamp(34px,9vw,58px);line-height:1;margin:4px 0 10px;
+  letter-spacing:-.02em;text-shadow:0 2px 0 rgba(120,40,10,.25)}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;background:rgba(120,40,15,.38);backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,.3);padding:5px 11px;border-radius:999px;font-size:13px;font-weight:600}
+.hero-btns{position:absolute;top:0;right:0;display:flex;gap:6px}
+.icon-btn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);
+  display:grid;place-items:center;font-size:17px}
+
+/* ---------- tabs ---------- */
+.tabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;justify-content:center;padding:10px 12px;
+  background:rgba(244,231,211,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.tab{padding:8px 14px;border-radius:999px;font-weight:600;font-size:14px;color:var(--muted)}
+.tab.on{background:var(--ink);color:var(--paper)}
+main{max-width:760px;margin:0 auto;padding:18px 16px}
+.view{display:none}.view.on{display:block}
+.toolbar{display:flex;gap:8px;justify-content:space-between;align-items:center;margin:0 0 14px}
+.toolbar h2{font-family:var(--hand);font-size:32px;margin:0;line-height:1}
+.pill{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-weight:600;font-size:13px}
+
+/* ---------- day page ---------- */
+.page{position:relative;background:var(--paper);border-radius:4px;padding:22px 16px 16px;margin:0 0 34px;
+  box-shadow:0 1px 0 #ead9bf,0 10px 24px -14px rgba(90,50,20,.45)}
+.page:nth-child(odd){transform:rotate(-.4deg)} .page:nth-child(even){transform:rotate(.4deg)}
+.page::before{content:"";position:absolute;top:-11px;left:50%;width:110px;height:24px;transform:translateX(-50%) rotate(-3deg);
+  background:repeating-linear-gradient(45deg,rgba(232,145,58,.55) 0 8px,rgba(232,145,58,.35) 8px 16px);opacity:.9}
+.page:nth-child(3n+2)::before{background:repeating-linear-gradient(45deg,rgba(111,138,92,.5) 0 8px,rgba(111,138,92,.32) 8px 16px)}
+.page:nth-child(3n)::before{background:repeating-linear-gradient(45deg,rgba(208,96,122,.45) 0 8px,rgba(208,96,122,.28) 8px 16px)}
+.page.today{outline:3px solid var(--sun);outline-offset:4px}
+.day-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.datebox{min-width:62px;text-align:center;border:2px dashed var(--line);border-radius:10px;padding:4px 6px}
+.datebox .d{font-family:var(--serif);font-weight:800;font-size:28px;line-height:1}
+.datebox .m{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.day-head .t{flex:1;min-width:0}
+.day-label{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--terra)}
+.day-title{font-family:var(--hand);font-size:30px;line-height:1.05;margin:0;word-wrap:break-word}
+.day-notes{font-size:13px;color:var(--muted);margin:4px 0 0;white-space:pre-wrap}
+.badge{display:inline-block;background:var(--sun);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+.mini{font-size:13px;color:var(--muted);padding:6px}
+
+/* ---------- timeline ---------- */
+.tl{position:relative;margin:0;padding:0;list-style:none}
+.tl::before{content:"";position:absolute;left:61px;top:6px;bottom:6px;border-left:2px dotted var(--line)}
+.it{position:relative;display:grid;grid-template-columns:52px 20px 1fr;gap:0 8px;padding:8px 0}
+.it .time{text-align:right;font-weight:700;font-size:13px;padding-top:7px;line-height:1.15}
+.it .time small{display:block;font-weight:500;color:var(--muted);font-size:11px}
+.it .dot{width:20px;height:20px;border-radius:50%;margin-top:6px;background:var(--c);box-shadow:0 0 0 3px var(--paper);
+  display:grid;place-items:center;font-size:10px;z-index:1}
+.card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--c);border-radius:10px;padding:9px 11px;min-width:0;cursor:pointer}
+.card:active{transform:scale(.99)}
+.it.done .card{opacity:.55}.it.done .ttl{text-decoration:line-through}
+.it.next .card{box-shadow:0 0 0 2px var(--sun)}
+.card-top{display:flex;gap:8px;align-items:flex-start}
+.ttl{font-weight:600;flex:1;min-width:0;word-wrap:break-word}
+.tag{font-size:11px;font-weight:700;color:var(--c);text-transform:uppercase;letter-spacing:.06em}
+.check{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:13px;background:#fff}
+.it.done .check{background:var(--sage);border-color:var(--sage);color:#fff}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.meta a,.meta span{font-size:12px;background:var(--sand);border-radius:6px;padding:3px 7px;color:var(--ink);text-decoration:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta a{background:#fde7d3;color:#8a3a1b;font-weight:600}
+.notes{font-size:13px;color:#5b4636;margin-top:6px;white-space:pre-wrap;word-wrap:break-word}
+.photos{display:flex;gap:10px;overflow-x:auto;padding:8px 2px 4px;margin-top:4px;scrollbar-width:none}
+.polaroid{flex:none;background:#fff;padding:5px 5px 16px;box-shadow:0 3px 8px rgba(60,30,10,.22);border-radius:2px}
+.polaroid:nth-child(odd){transform:rotate(-2deg)}.polaroid:nth-child(even){transform:rotate(2deg)}
+.polaroid img{display:block;width:92px;height:92px;object-fit:cover;background:var(--sand)}
+.add-row{display:flex;justify-content:center;margin-top:8px}
+.add-btn{border:2px dashed var(--line);border-radius:12px;padding:9px 16px;font-weight:600;color:var(--terra);width:100%}
+
+/* ---------- dream board ---------- */
+.board{columns:2 170px;column-gap:14px}
+.pin{break-inside:avoid;background:#fff;padding:8px 8px 12px;margin:0 0 16px;box-shadow:0 6px 14px -6px rgba(60,30,10,.35);border-radius:3px;cursor:pointer;position:relative}
+.pin:nth-child(odd){transform:rotate(-1.2deg)}.pin:nth-child(even){transform:rotate(1.2deg)}
+.pin::before{content:"";position:absolute;top:-8px;left:50%;width:16px;height:16px;border-radius:50%;transform:translateX(-50%);
+  background:radial-gradient(circle at 35% 35%,#ff9c8a,#c4532d);box-shadow:0 2px 3px rgba(0,0,0,.3)}
+.pin img{width:100%;display:block;max-height:260px;object-fit:cover;background:var(--sand)}
+.pin .noimg{height:90px;display:grid;place-items:center;font-size:38px;background:var(--sand)}
+.pin h4{font-family:var(--hand);font-size:24px;margin:6px 0 0;line-height:1.05}
+.pin p{margin:2px 0 0;font-size:12.5px;color:var(--muted);white-space:pre-wrap}
+.pin .count{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;border-radius:999px;padding:2px 7px}
+
+/* ---------- packing ---------- */
+.list{background:var(--paper);border-radius:6px;padding:14px;box-shadow:0 10px 24px -14px rgba(90,50,20,.45);
+  background-image:repeating-linear-gradient(transparent 0 37px,#ecdcc4 37px 38px)}
+.li{display:flex;gap:10px;align-items:center;height:38px}
+.li span{flex:1;font-family:var(--hand);font-size:23px}
+.li.done span{text-decoration:line-through;color:var(--muted)}
+.li.done .check{background:var(--sage);border-color:var(--sage);color:#fff}
+.li .x{color:var(--muted);font-size:18px;padding:0 6px}
+.addline{display:flex;gap:8px;margin-top:12px}
+.addline input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.btn{background:var(--terra);color:#fff;border-radius:10px;padding:10px 16px;font-weight:700}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:#fff;color:#b3261e;border:1px solid #f0c4bf}
+
+/* ---------- FAB ---------- */
+.fab{position:fixed;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:30;height:56px;padding:0 22px;border-radius:999px;
+  background:var(--ink);color:var(--paper);font-weight:700;box-shadow:0 10px 24px -8px rgba(40,20,10,.6);display:flex;align-items:center;gap:8px}
+.fab b{font-size:24px;line-height:1}
+
+/* ---------- sheet ---------- */
+.scrim{position:fixed;inset:0;background:rgba(40,22,10,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.scrim.on{display:flex}
+.sheet{background:var(--paper);width:100%;max-width:580px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;
+  padding:16px 16px calc(18px + env(safe-area-inset-bottom));animation:up .22s ease}
+@media(min-width:640px){.scrim{align-items:center}.sheet{border-radius:20px}}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sheet-head h3{font-family:var(--hand);font-size:30px;margin:0}
+.typegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.tchip{border:1.5px solid var(--line);border-radius:12px;padding:7px 2px;display:flex;flex-direction:column;align-items:center;font-size:20px;background:#fff}
+.tchip span{font-size:11px;font-weight:600;color:var(--muted)}
+.tchip.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,#fff)}
+.tchip.on span{color:var(--c)}
+.f label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px}
+.f input,.f textarea,.f select{display:block;width:100%;margin-top:4px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;font-size:16px;text-transform:none;letter-spacing:0;font-weight:400}
+.f textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;margin:4px 0 8px}
+.pthumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--sand)}
+.pthumb img{width:100%;height:100%;object-fit:cover}
+.pthumb button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:12px}
+.padd{aspect-ratio:1;border:2px dashed var(--line);border-radius:8px;display:grid;place-items:center;text-align:center;font-size:12px;color:var(--terra);font-weight:700;cursor:pointer}
+.padd input{display:none}
+.urlrow{display:flex;gap:6px}.urlrow input{margin-top:0!important}
+.actions{display:flex;gap:8px;justify-content:space-between;margin-top:14px}
+.menu-list button{display:block;width:100%;text-align:left;padding:13px 4px;border-bottom:1px solid var(--line);font-weight:600}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+
+/* ---------- lightbox ---------- */
+.lb{position:fixed;inset:0;background:rgba(20,10,5,.92);z-index:60;display:none;align-items:center;justify-content:center}
+.lb.on{display:flex}
+.lb img{max-width:94vw;max-height:84vh;border:6px solid #fff;border-bottom-width:28px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.lb .nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font-size:22px}
+.lb .prev{left:10px}.lb .next{right:10px}
+.lb .close{position:absolute;top:14px;right:14px;color:#fff;font-size:26px}
+.lb .cap{position:absolute;bottom:18px;color:#fff;font-family:var(--hand);font-size:24px}
+.empty{text-align:center;padding:30px 10px;color:var(--muted)}
+.empty .big{font-size:44px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;z-index:70;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.savebar{position:fixed;top:10px;right:10px;z-index:80;background:var(--paper);color:var(--muted);border:1px solid var(--line);padding:4px 11px;border-radius:999px;font:12px var(--sans);opacity:.9}
+.savebar.saving{color:var(--sun)}
+.savebar.ok{color:var(--sage)}
+.savebar.wait{color:#8a5a00;background:#fff3d6;border-color:#f0d9a8}
+.savebar.auth{cursor:pointer}
+.savebar.auth,.savebar.copy{left:10px;text-align:center;background:#b3261e;color:#fff;border-color:#b3261e;border-radius:12px;padding:10px 14px;font-size:14px;opacity:1}
+.savebar.copy{background:var(--ink);border-color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="sunball"></div>
+  <div class="hero-inner">
+    <div class="hero-btns">
+      <button class="icon-btn" data-act="edit-trip" title="Edit trip">✏️</button>
+      <button class="icon-btn" data-act="menu" title="Menu">☰</button>
+    </div>
+    <p class="kicker" id="hTravelers">our little desert adventure</p>
+    <h1 id="hTitle">Arizona</h1>
+    <div class="hero-meta" id="hMeta"></div>
+  </div>
+  <svg viewBox="0 0 1200 110" preserveAspectRatio="none" aria-hidden="true">
+    <path fill="#9c3a22" opacity=".55" d="M0 70 L120 70 L140 40 L260 40 L280 70 L520 70 L540 30 L700 30 L725 70 L1200 60 L1200 110 L0 110Z"/>
+    <path fill="#7a2c1a" opacity=".8" d="M0 90 L200 85 L230 55 L330 55 L350 85 L760 88 L790 50 L860 50 L880 88 L1200 85 L1200 110 L0 110Z"/>
+    <path fill="#f4e7d3" d="M0 102 Q300 92 600 100 T1200 98 L1200 110 L0 110Z"/>
+  </svg>
+</header>
+
+<nav class="tabs">
+  <button class="tab on" data-act="tab" data-v="days">🗓️ Itinerary</button>
+  <button class="tab" data-act="tab" data-v="board">📌 Dream Board</button>
+  <button class="tab" data-act="tab" data-v="pack">🎒 Packing</button>
+</nav>
+
+<main>
+  <section class="view on" id="v-days"></section>
+  <section class="view" id="v-board"></section>
+  <section class="view" id="v-pack"></section>
+</main>
+
+<button class="fab" id="fab" data-act="fab"><b>+</b><span id="fabLabel">Add day</span></button>
+
+<div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+<div class="lb" id="lb">
+  <button class="close" data-act="lb-close">✕</button>
+  <button class="nav prev" data-act="lb-prev">‹</button>
+  <img id="lbImg" alt="">
+  <button class="nav next" data-act="lb-next">›</button>
+  <div class="cap" id="lbCap"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="savebar" id="savebar">Loading…</div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+const TYPES = {
+  flight:   {i:'✈️', l:'Flight',    c:'#3b6ea5'},
+  stay:     {i:'🏨', l:'Stay',      c:'#7a5c9e'},
+  visit:    {i:'📍', l:'Visit',     c:'#c4532d'},
+  hike:     {i:'🥾', l:'Hike',      c:'#5f8a4a'},
+  breakfast:{i:'☕', l:'Breakfast', c:'#d4932a'},
+  lunch:    {i:'🥪', l:'Lunch',     c:'#8f9a2f'},
+  dinner:   {i:'🍽️', l:'Dinner',    c:'#a8324a'},
+  drive:    {i:'🚗', l:'Drive',     c:'#5a6b7b'},
+  photo:    {i:'📸', l:'Photo spot',c:'#d0607a'},
+  ticket:   {i:'🎟️', l:'Ticket',    c:'#2f8f8a'},
+  shop:     {i:'🛍️', l:'Shopping',  c:'#b5651d'},
+  note:     {i:'📝', l:'Note',      c:'#8b7355'},
+};
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const nowHM = () => { const d = new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+const fmtTime = t => { if (!t) return ''; let [h,m] = t.split(':').map(Number); const ap = h>=12?'pm':'am'; h = h%12||12; return h+(m?':'+String(m).padStart(2,'0'):'')+ap; };
+const parseDate = s => s ? new Date(s+'T12:00:00') : null;
+const mapsUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+
+/* ---------- storage: IndexedDB (big enough for photos) with localStorage fallback ---------- */
+const KEY = 'az-scrapbook-v1';
+const idb = {
+  _db: null,
+  open() {
+    if (this._db) return Promise.resolve(this._db);
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('az-scrapbook', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(this._db = r.result);
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async get(k) { const db = await this.open(); return new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); },
+  async set(k, v) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('kv','readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); },
+};
+/* ---------- sync: everything lives in a private GitHub repo; this browser keeps a cache ----------
+   scrapbook.json holds the scrapbook, photos are separate files under photos/.
+   Every save is a commit, so the repo history doubles as the undo log. */
+const REPO = 'nidhicj/arizona-scrapbook-data';
+const GH = `https://api.github.com/repos/${REPO}/contents/`;
+const OFFLINE = window.OFFLINE_SCRAPBOOK || null;  // set inside a downloaded offline copy
+let token = '';
+try { token = OFFLINE ? '' : (localStorage.getItem('gh-token') || ''); } catch (e) {}
+let sha = null, ver = 0, cachedVer = 0, savedVer = 0, flushing = false, needPush = false, retryTimer, saveTimer;
+const uploaded = {};  // data: URL -> repo path, so a photo is never uploaded twice
+
+function saveStatus(state) {
+  const b = $('#savebar'); b.className = 'savebar ' + state;
+  b.textContent = {
+    saving: 'Saving…',
+    ok: 'Synced ✓',
+    wait: '📴 Offline — saved on this device, will sync when back online',
+    auth: '⚠️ Not syncing — tap here to connect your GitHub token',
+    copy: '📦 Offline copy — edits stay on this device (use Export to keep them)',
+  }[state];
+}
+$('#savebar').onclick = () => { if ($('#savebar').classList.contains('auth')) askToken(); };
+
+const b64enc = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s); };
+const b64dec = s => Uint8Array.from(atob(s.replace(/\s/g, '')), c => c.charCodeAt(0));
+const toDataURL = blob => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+const allItems = d => [...d.days.flatMap(x => x.items), ...(d.board || [])];
+
+async function gh(path, opts = {}) {
+  const r = await fetch(GH + path, {cache: 'no-store', ...opts, headers: {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', ...opts.headers}});
+  if (r.status === 401) { saveStatus('auth'); throw new Error('auth'); }
+  return r;
+}
+async function pullRemote() {
+  const r = await gh('scrapbook.json');
+  if (r.status === 404) return {data: null, sha: null};
+  if (!r.ok) throw new Error(r.status);
+  const j = await r.json();
+  return {data: JSON.parse(new TextDecoder().decode(b64dec(j.content))), sha: j.sha};
+}
+async function putFile(path, bytes, message, fileSha) {
+  const r = await gh(path, {method: 'PUT', body: JSON.stringify({message, content: b64enc(bytes), ...(fileSha ? {sha: fileSha} : {})})});
+  if (!r.ok) { const e = new Error('put ' + r.status); e.status = r.status; throw e; }
+  return (await r.json()).content.sha;
+}
+
+/* photos: repo paths are fetched once, then served from the device cache */
+const PIC = {}, picLoading = {};
+const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+function pic(p) {
+  if (!p.startsWith('photos/')) return p;
+  if (PIC[p]) return PIC[p];
+  loadPic(p); return BLANK;
+}
+function cachePic(p, blob) { PIC[p] = URL.createObjectURL(blob); idb.set('pic:' + p, blob).catch(() => {}); }
+function loadPic(p) {
+  return picLoading[p] ||= (async () => {
+    let blob;
+    try { blob = await idb.get('pic:' + p); } catch (e) {}
+    if (!blob && token) {
+      try { const r = await gh(p, {headers: {Accept: 'application/vnd.github.raw'}}); if (r.ok) { blob = await r.blob(); idb.set('pic:' + p, blob).catch(() => {}); } } catch (e) {}
+    }
+    if (!blob) { delete picLoading[p]; return; }
+    PIC[p] = URL.createObjectURL(blob);
+    document.querySelectorAll('img[data-pic]').forEach(i => { if (i.dataset.pic === p) i.src = PIC[p]; });
+  })();
+}
+async function uploadPhotos() {  // swap freshly added photos (data: URLs) for files in the repo
+  for (const it of allItems(S)) for (let i = 0; i < (it.photos || []).length; i++) {
+    const p = it.photos[i];
+    if (!p.startsWith('data:')) continue;
+    if (!uploaded[p]) {
+      const blob = await (await fetch(p)).blob();
+      const path = `photos/${uid()}.${(blob.type.split('/')[1] || 'jpg').replace(/\W.*/, '')}`;
+      await putFile(path, new Uint8Array(await blob.arrayBuffer()), 'Add photo');
+      cachePic(path, blob);
+      uploaded[p] = path;
+    }
+    it.photos[i] = uploaded[p];
+  }
+}
+async function withInlinePhotos() {  // a self-contained copy of the scrapbook, photos included
+  const d = JSON.parse(JSON.stringify(S));
+  for (const it of allItems(d)) it.photos = await Promise.all((it.photos || []).map(async p => {
+    if (!p.startsWith('photos/')) return p;
+    await loadPic(p);
+    return PIC[p] ? toDataURL(await (await fetch(PIC[p])).blob()) : p;
+  }));
+  return d;
+}
+
+async function flush() {
+  if (OFFLINE || !token || flushing) return;
+  flushing = true; clearTimeout(retryTimer);
+  const v = ver;
+  try {
+    await uploadPhotos();
+    const body = new TextEncoder().encode(JSON.stringify(S, null, 1));
+    try { sha = await putFile('scrapbook.json', body, 'Update scrapbook', sha); }
+    catch (e) {
+      if (e.status !== 409 && e.status !== 422) throw e;
+      // another device saved in the meantime: ours goes on top, theirs stays in the repo history
+      sha = (await pullRemote()).sha;
+      sha = await putFile('scrapbook.json', body, 'Update scrapbook', sha);
+      toast('Another device also edited — its version is kept in the GitHub history');
+    }
+    savedVer = v;
+    idb.set(KEY, S).catch(() => {});
+  } catch (e) {
+    flushing = false;
+    if (e.message !== 'auth') { saveStatus('wait'); retryTimer = setTimeout(flush, 10000); }
+    return;
+  }
+  flushing = false;
+  if (savedVer < ver) flush(); else saveStatus('ok');
+}
+function save() {
+  ver++; S.savedAt = Date.now();
+  if (!OFFLINE && token) saveStatus('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const v = ver;
+    try { await idb.set(KEY, S); cachedVer = v; } catch (e) { toast('⚠️ Could not save on this device — Export a backup!'); }
+    if (OFFLINE) return;
+    if (!token) return saveStatus('auth');
+    flush();
+  }, 1500);
+}
+addEventListener('beforeunload', e => { if (cachedVer !== ver) { e.preventDefault(); e.returnValue = ''; } });
+addEventListener('online', () => { if (savedVer !== ver) flush(); });
+// coming back to the tab: pick up edits made on another device (unless something here is unsaved or open)
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden || OFFLINE || !token || flushing || savedVer !== ver || $('#scrim').classList.contains('on')) return;
+  try {
+    const r = await pullRemote();
+    if (r.data && r.sha !== sha && savedVer === ver) { sha = r.sha; S = r.data; idb.set(KEY, S).catch(() => {}); render(); saveStatus('ok'); }
+  } catch (e) {}
+});
+
+async function load() {
+  let local;
+  try { local = await idb.get(KEY); } catch (e) {}
+  if (OFFLINE) { saveStatus('copy'); return local?.savedAt > (OFFLINE.savedAt || 0) ? local : OFFLINE; }
+  if (!token) { saveStatus('auth'); setTimeout(askToken, 300); return local || seed(); }
+  try {
+    const remote = await pullRemote();
+    sha = remote.sha;
+    // whichever copy was edited last wins; GitHub wins ties
+    if (local && (!remote.data || local.savedAt > (remote.data.savedAt || 0))) { needPush = true; return local; }
+    saveStatus('ok');
+    if (remote.data) idb.set(KEY, remote.data).catch(() => {});
+    return remote.data || seed();
+  } catch (e) {
+    if (e.message !== 'auth') saveStatus('wait');
+    return local || seed();
+  }
+}
+function askToken() {
+  openSheet(`<form class="f" id="tokenForm">
+    <div class="sheet-head"><h3>Connect to GitHub</h3><button type="button" class="icon-btn" style="background:var(--sand)" data-act="close">✕</button></div>
+    <p class="hint">The scrapbook is saved in your private repo <b>${REPO}</b>. Paste a GitHub token that can read &amp; write it — once per device.</p>
+    <p class="hint"><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a token ↗</a> · Repository access: <b>Only select repositories → arizona-scrapbook-data</b> · Permissions → Contents: <b>Read and write</b></p>
+    <label>Token<input name="t" placeholder="github_pat_…" autocomplete="off" required></label>
+    <div class="actions"><span></span><button class="btn">Connect</button></div>
+  </form>`);
+  $('#tokenForm').onsubmit = e => {
+    e.preventDefault();
+    try { localStorage.setItem('gh-token', new FormData(e.target).get('t').trim()); } catch (err) {}
+    location.reload();
+  };
+}
+async function downloadOfflineCopy() {
+  toast('Packing your offline copy…');
+  const src = await (await fetch(location.href.split('#')[0])).text();
+  const data = JSON.stringify(await withInlinePhotos()).replace(/</g, '\\u003c');
+  const html = src.replace('<script>', () => `<script>window.OFFLINE_SCRAPBOOK = ${data};<\/script>\n<script>`);
+  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(new Blob([html], {type: 'text/html'})), download: `arizona-scrapbook-offline-${todayISO()}.html`});
+  document.body.appendChild(a); a.click(); a.remove(); toast('Offline copy downloaded');
+}
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+
+function item(type, start, title, extra = {}) {
+  return {id: uid(), type, start, end: '', title, place: '', conf: '', link: '', notes: '', photos: [], done: false, ...extra};
+}
+function seed() {
+  return {
+    trip: {title: 'Arizona', sub: 'red rocks, big skies & tacos', start: '', end: ''},
+    days: [
+      {id: uid(), date: '', title: 'Phoenix → Sedona', notes: 'Sample day — edit or delete me!', items: [
+        item('flight', '08:15', 'Land at PHX', {conf: 'Flight # / conf. code', notes: 'Pick up rental car at the Rental Car Center (shuttle from terminal)'}),
+        item('drive', '12:00', 'Drive up to Sedona (~2h)', {place: 'Sedona, AZ'}),
+        item('lunch', '14:00', 'Lunch in Uptown Sedona', {place: 'Uptown Sedona'}),
+        item('photo', '17:30', 'Sunset at Airport Mesa', {place: 'Airport Mesa, Sedona AZ', notes: 'Get there 45 min early for parking'}),
+        item('dinner', '19:30', 'Dinner', {}),
+      ]},
+      {id: uid(), date: '', title: 'Grand Canyon day', notes: '', items: [
+        item('breakfast', '06:30', 'Early breakfast + coffee to go'),
+        item('visit', '10:00', 'South Rim — Mather Point', {place: 'Mather Point, Grand Canyon', end: '13:00'}),
+        item('hike', '14:00', 'Bright Angel Trail (first mile & back)', {place: 'Bright Angel Trailhead', notes: 'Carry 2L water + salty snacks'}),
+        item('photo', '18:00', 'Sunset at Hopi Point', {place: 'Hopi Point, Grand Canyon'}),
+      ]},
+    ],
+    board: [
+      item('photo', '', 'Horseshoe Bend', {place: 'Horseshoe Bend, Page AZ', notes: 'Best light: mid-morning'}),
+      item('ticket', '', 'Antelope Canyon', {place: 'Antelope Canyon, Page AZ', notes: 'Guided tour only — book ahead!'}),
+      item('visit', '', 'Desert View Watchtower', {place: 'Desert View Watchtower, Grand Canyon'}),
+    ],
+    packing: ['Sunscreen + lip balm','Wide-brim hat','Big water bottle (2L+)','Hiking shoes','Warm layer for cold desert nights','Sunglasses','Chargers + power bank']
+      .map(t => ({id: uid(), text: t, done: false})),
+  };
+}
+
+/* ---------- render ---------- */
+let S, view = 'days';
+
+function renderHero() {
+  const t = S.trip;
+  $('#hTitle').textContent = t.title || 'Arizona';
+  $('#hTravelers').textContent = t.sub || 'our little desert adventure';
+  document.title = (t.title || 'Arizona') + ' Scrapbook';
+  const chips = [];
+  if (t.start) {
+    const s = parseDate(t.start), e = parseDate(t.end || t.start), now = parseDate(todayISO());
+    const opt = {month: 'short', day: 'numeric'};
+    chips.push(`📅 ${s.toLocaleDateString(undefined, opt)}${t.end && t.end !== t.start ? ' – ' + e.toLocaleDateString(undefined, opt) : ''}`);
+    const diff = Math.round((s - now) / 864e5);
+    if (diff > 0) chips.push(`⏳ ${diff} day${diff > 1 ? 's' : ''} to go`);
+    else if (now <= e) chips.push(`🌵 Day ${Math.round((now - s) / 864e5) + 1} of the trip`);
+    else chips.push('✨ Memories made');
+  } else chips.push('📅 Tap ✏️ to set trip dates');
+  const stops = S.days.reduce((n, d) => n + d.items.length, 0);
+  chips.push(`📍 ${S.days.length} days · ${stops} stops`);
+  $('#hMeta').innerHTML = chips.map(c => `<span class="chip">${esc(c)}</span>`).join('');
+}
+
+function sortDays() {
+  S.days.sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : (a.date || '9999') > (b.date || '9999') ? 1 : 0);
+}
+const byTime = (a, b) => (a.start || '99') < (b.start || '99') ? -1 : (a.start || '99') > (b.start || '99') ? 1 : 0;
+
+function photoStrip(it) {
+  if (!it.photos?.length) return '';
+  return `<div class="photos">${it.photos.map((p, i) =>
+    `<div class="polaroid" data-act="photo" data-id="${it.id}" data-i="${i}"><img loading="lazy" src="${esc(pic(p))}" data-pic="${esc(p)}" alt=""></div>`).join('')}</div>`;
+}
+
+function itemHTML(it, isNext) {
+  const T = TYPES[it.type] || TYPES.note;
+  const meta = [];
+  if (it.place) meta.push(`<a href="${mapsUrl(it.place)}" target="_blank" rel="noopener" data-stop>🗺️ ${esc(it.place)}</a>`);
+  if (it.conf) meta.push(`<span>🔖 ${esc(it.conf)}</span>`);
+  if (it.link) meta.push(`<a href="${esc(it.link)}" target="_blank" rel="noopener" data-stop>🔗 Link</a>`);
+  return `<li class="it ${it.done ? 'done' : ''} ${isNext ? 'next' : ''}" style="--c:${T.c}">
+    <div class="time">${it.start ? esc(fmtTime(it.start)) : '—'}${it.end ? `<small>to ${esc(fmtTime(it.end))}</small>` : ''}</div>
+    <div class="dot">${T.i}</div>
+    <div class="card" data-act="edit-item" data-id="${it.id}">
+      <div class="card-top">
+        <div class="ttl"><div class="tag">${T.i} ${T.l}${isNext ? ' · up next' : ''}</div>${esc(it.title || 'Untitled')}</div>
+        <button class="check" data-act="toggle" data-id="${it.id}" aria-label="Mark done">${it.done ? '✓' : ''}</button>
+      </div>
+      ${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}
+      ${it.notes ? `<div class="notes">${esc(it.notes)}</div>` : ''}
+      ${photoStrip(it)}
+    </div>
+  </li>`;
+}
+
+function renderDays() {
+  sortDays();
+  const el = $('#v-days'), today = todayISO(), now = nowHM();
+  const hasToday = S.days.some(d => d.date === today);
+  let html = `<div class="toolbar"><h2>Day by day</h2>${hasToday ? '<button class="pill" data-act="jump-today">☀️ Jump to today</button>' : ''}</div>`;
+  if (!S.days.length) html += `<div class="empty"><div class="big">🌵</div>No days yet — tap <b>+ Add day</b> to start your scrapbook.</div>`;
+  S.days.forEach((d, idx) => {
+    const dt = parseDate(d.date), items = [...d.items].sort(byTime);
+    const nextId = d.date === today ? (items.find(i => !i.done && (i.start || '99') >= now) || {}).id : null;
+    html += `<article class="page ${d.date === today ? 'today' : ''}" id="day-${d.id}">
+      <div class="day-head">
+        <div class="datebox">${dt ? `<div class="m">${dt.toLocaleDateString(undefined, {weekday: 'short'})}</div><div class="d">${dt.getDate()}</div><div class="m">${dt.toLocaleDateString(undefined, {month: 'short'})}</div>`
+                                 : `<div class="m">Day</div><div class="d">${idx + 1}</div><div class="m">no date</div>`}</div>
+        <div class="t">
+          <div class="day-label">Day ${idx + 1}${d.date === today ? '<span class="badge">TODAY</span>' : ''}</div>
+          <h3 class="day-title">${esc(d.title || 'Untitled day')}</h3>
+          ${d.notes ? `<p class="day-notes">${esc(d.notes)}</p>` : ''}
+        </div>
+        <button class="pill" data-act="edit-day" data-id="${d.id}">Edit</button>
+      </div>
+      ${items.length ? `<ul class="tl">${items.map(i => itemHTML(i, i.id === nextId)).join('')}</ul>` : '<p class="mini">Nothing planned yet.</p>'}
+      <div class="add-row"><button class="add-btn" data-act="add-item" data-day="${d.id}">+ Add flight, meal, place, photo…</button></div>
+    </article>`;
+  });
+  el.innerHTML = html;
+}
+
+function renderBoard() {
+  const el = $('#v-board');
+  let html = `<div class="toolbar"><h2>Dream board</h2><span class="mini">spots I want to see</span></div>`;
+  if (!S.board.length) html += `<div class="empty"><div class="big">📌</div>Pin places &amp; pictures you’ve been dreaming about.<br>Move them into a day when you’re ready.</div>`;
+  html += `<div class="board">${S.board.map(it => {
+    const T = TYPES[it.type] || TYPES.note;
+    return `<div class="pin" data-act="edit-item" data-id="${it.id}">
+      ${it.photos?.length ? `<img src="${esc(pic(it.photos[0]))}" data-pic="${esc(it.photos[0])}" alt="" data-act="photo" data-id="${it.id}" data-i="0">${it.photos.length > 1 ? `<span class="count">+${it.photos.length - 1}</span>` : ''}` : `<div class="noimg">${T.i}</div>`}
+      <h4>${esc(it.title || 'Untitled')}</h4>
+      ${it.place ? `<p><a href="${mapsUrl(it.place)}" target="_blank" rel="noopener" data-stop style="color:#8a3a1b">🗺️ ${esc(it.place)}</a></p>` : ''}
+      ${it.notes ? `<p>${esc(it.notes)}</p>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+  el.innerHTML = html;
+}
+
+function renderPack() {
+  const done = S.packing.filter(p => p.done).length;
+  $('#v-pack').innerHTML = `<div class="toolbar"><h2>Packing list</h2><span class="mini">${done}/${S.packing.length} packed</span></div>
+    <div class="list">${S.packing.map(p => `<div class="li ${p.done ? 'done' : ''}">
+        <button class="check" data-act="pack-toggle" data-id="${p.id}">${p.done ? '✓' : ''}</button>
+        <span>${esc(p.text)}</span><button class="x" data-act="pack-del" data-id="${p.id}" aria-label="Remove">×</button></div>`).join('')}</div>
+    <form class="addline" id="packForm"><input name="t" placeholder="Add something to pack…" autocomplete="off"><button class="btn">Add</button></form>`;
+  $('#packForm').onsubmit = e => {
+    e.preventDefault(); const v = e.target.t.value.trim(); if (!v) return;
+    S.packing.push({id: uid(), text: v, done: false}); save(); renderPack(); $('#packForm input').focus();
+  };
+}
+
+function render() {
+  renderHero(); renderDays(); renderBoard(); renderPack();
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.v === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + view));
+  $('#fab').style.display = view === 'pack' ? 'none' : '';
+  $('#fabLabel').textContent = view === 'board' ? 'Pin a spot' : 'Add day';
+}
+
+/* ---------- lookups ---------- */
+function findItem(id) {
+  for (const d of S.days) { const i = d.items.findIndex(x => x.id === id); if (i > -1) return {item: d.items[i], list: d.items, where: d.id}; }
+  const i = S.board.findIndex(x => x.id === id);
+  return i > -1 ? {item: S.board[i], list: S.board, where: 'board'} : null;
+}
+
+/* ---------- sheet ---------- */
+function openSheet(html) { $('#sheet').innerHTML = html; $('#scrim').classList.add('on'); $('#sheet').scrollTop = 0; }
+function closeSheet() { $('#scrim').classList.remove('on'); }
+$('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim') closeSheet(); });
+
+function compress(file, max = 1400, q = .82) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('bad image')); };
+    img.src = url;
+  });
+}
+
+let draft = null; // {item, isNew, where, photos}
+function openItemForm(it, where, isNew) {
+  draft = {item: it, isNew, where, photos: [...(it.photos || [])], type: it.type};
+  const whereOpts = S.days.map((d, i) => `<option value="${d.id}" ${where === d.id ? 'selected' : ''}>Day ${i + 1}${d.title ? ' — ' + esc(d.title) : ''}</option>`).join('')
+    + `<option value="board" ${where === 'board' ? 'selected' : ''}>📌 Dream board (no day yet)</option>`;
+  openSheet(`<form class="f" id="itemForm">
+    <div class="sheet-head"><h3>${isNew ? 'Add to scrapbook' : 'Edit'}</h3><button type="button" class="icon-btn" style="background:var(--sand)" data-act="close">✕</button></div>
+    <div class="typegrid">${Object.entries(TYPES).map(([k, t]) =>
+      `<button type="button" class="tchip ${k === it.type ? 'on' : ''}" data-act="pick-type" data-type="${k}" style="--c:${t.c}">${t.i}<span>${t.l}</span></button>`).join('')}</div>
+    <label>Title<input name="title" value="${esc(it.title)}" placeholder="e.g. Sunrise at Cathedral Rock" required></label>
+    <div class="row"><label>Start time<input type="time" name="start" value="${esc(it.start)}"></label><label>End time<input type="time" name="end" value="${esc(it.end)}"></label></div>
+    <label>Place / address<input name="place" value="${esc(it.place)}" placeholder="Opens in Google Maps"></label>
+    <label>Flight # / confirmation / reservation<input name="conf" value="${esc(it.conf)}" placeholder="e.g. AA 1234 · conf XJ8K2"></label>
+    <label>Link (tickets, menu, blog)<input type="url" name="link" value="${esc(it.link)}" placeholder="https://…"></label>
+    <label>Notes<textarea name="notes" placeholder="What to order, what to bring, why it’s special…">${esc(it.notes)}</textarea></label>
+    <label>Photos & inspiration</label>
+    <div class="pgrid" id="pgrid"></div>
+    <div class="urlrow"><input id="imgUrl" placeholder="…or paste an image link" style="flex:1"><button type="button" class="btn ghost" data-act="add-url">Add</button></div>
+    <p class="hint">Photos are saved inside this scrapbook on this device.</p>
+    <label style="margin-top:12px">Put it on<select name="where">${whereOpts}</select></label>
+    <div class="actions">${isNew ? '<span></span>' : '<button type="button" class="btn danger" data-act="del-item">Delete</button>'}
+      <button class="btn">Save ✓</button></div>
+  </form>`);
+  renderPgrid();
+  $('#itemForm').onsubmit = e => { e.preventDefault(); saveItem(new FormData(e.target)); };
+}
+function renderPgrid() {
+  $('#pgrid').innerHTML = draft.photos.map((p, i) => `<div class="pthumb"><img src="${esc(pic(p))}" data-pic="${esc(p)}" alt=""><button type="button" data-act="rm-photo" data-i="${i}">✕</button></div>`).join('')
+    + `<label class="padd">📷<br>Add photos<input type="file" accept="image/*" multiple id="pinput"></label>`;
+  $('#pinput').onchange = async e => {
+    const files = [...e.target.files]; if (!files.length) return;
+    toast('Adding ' + files.length + ' photo' + (files.length > 1 ? 's' : '') + '…');
+    for (const f of files) { try { draft.photos.push(await compress(f)); } catch (err) { toast('Skipped a file that isn’t an image'); } }
+    renderPgrid();
+  };
+}
+function saveItem(fd) {
+  const it = draft.item;
+  ['title', 'start', 'end', 'place', 'conf', 'link', 'notes'].forEach(k => it[k] = (fd.get(k) || '').trim());
+  it.type = draft.type; it.photos = draft.photos;
+  const target = fd.get('where');
+  if (!draft.isNew) { const f = findItem(it.id); f.list.splice(f.list.indexOf(it), 1); }
+  (target === 'board' ? S.board : (S.days.find(d => d.id === target) || {items: S.board}).items).push(it);
+  save(); closeSheet(); render(); toast(draft.isNew ? 'Added to your scrapbook ✨' : 'Saved');
+}
+
+function openDayForm(d, isNew) {
+  openSheet(`<form class="f" id="dayForm">
+    <div class="sheet-head"><h3>${isNew ? 'New day' : 'Edit day'}</h3><button type="button" class="icon-btn" style="background:var(--sand)" data-act="close">✕</button></div>
+    <label>Date<input type="date" name="date" value="${esc(d.date)}"></label>
+    <label>Theme / where<input name="title" value="${esc(d.title)}" placeholder="e.g. Sedona red rocks" required></label>
+    <label>Notes for the day<textarea name="notes" placeholder="Weather, mood, reminders…">${esc(d.notes)}</textarea></label>
+    <div class="actions">${isNew ? '<span></span>' : `<button type="button" class="btn danger" data-act="del-day" data-id="${d.id}">Delete day</button>`}<button class="btn">Save ✓</button></div>
+  </form>`);
+  $('#dayForm').onsubmit = e => {
+    e.preventDefault(); const fd = new FormData(e.target);
+    d.date = fd.get('date'); d.title = fd.get('title').trim(); d.notes = fd.get('notes').trim();
+    if (isNew) S.days.push(d);
+    save(); closeSheet(); render();
+    if (isNew) setTimeout(() => document.getElementById('day-' + d.id)?.scrollIntoView({behavior: 'smooth', block: 'start'}), 50);
+  };
+}
+
+function openTripForm() {
+  const t = S.trip;
+  openSheet(`<form class="f" id="tripForm">
+    <div class="sheet-head"><h3>Trip details</h3><button type="button" class="icon-btn" style="background:var(--sand)" data-act="close">✕</button></div>
+    <label>Trip name<input name="title" value="${esc(t.title)}"></label>
+    <label>Tagline<input name="sub" value="${esc(t.sub)}" placeholder="who’s going, the vibe…"></label>
+    <div class="row"><label>Start<input type="date" name="start" value="${esc(t.start)}"></label><label>End<input type="date" name="end" value="${esc(t.end)}"></label></div>
+    <div class="actions"><span></span><button class="btn">Save ✓</button></div>
+  </form>`);
+  $('#tripForm').onsubmit = e => {
+    e.preventDefault(); const fd = new FormData(e.target);
+    ['title', 'sub', 'start', 'end'].forEach(k => t[k] = fd.get(k).trim());
+    save(); closeSheet(); render();
+  };
+}
+
+function openMenu() {
+  openSheet(`<div class="sheet-head"><h3>Scrapbook</h3><button class="icon-btn" style="background:var(--sand)" data-act="close">✕</button></div>
+    <div class="menu-list">
+      ${OFFLINE ? '' : '<button data-act="offline-copy">📴 Download offline copy (opens with no internet)</button>'}
+      <button data-act="export">💾 Export backup (includes photos)</button>
+      <button data-act="import">📂 Import backup</button>
+      <button data-act="clear-done">🧹 Un-check all done items</button>
+      ${OFFLINE ? '' : '<button data-act="token">🔑 Change GitHub token</button>'}
+      <button data-act="reset" style="color:#b3261e">🗑️ Start fresh (erase everything)</button>
+    </div>
+    <p class="hint">${OFFLINE ? 'This is an offline copy: edits stay on this device. Export a backup and import it into the online scrapbook to keep them.' : `Saved to your private GitHub repo ${REPO} — every change is in its history.`}</p>`);
+}
+
+/* ---------- lightbox ---------- */
+let lb = null;
+function openLB(id, i) { const f = findItem(id); if (!f) return; lb = {photos: f.item.photos, i, cap: f.item.title}; showLB(); $('#lb').classList.add('on'); }
+function showLB() { $('#lbImg').src = pic(lb.photos[lb.i]); $('#lbImg').dataset.pic = lb.photos[lb.i]; $('#lbCap').textContent = lb.cap + (lb.photos.length > 1 ? `  ·  ${lb.i + 1}/${lb.photos.length}` : ''); }
+$('#lb').addEventListener('click', e => { if (e.target.id === 'lb') $('#lb').classList.remove('on'); });
+let tx = 0;
+$('#lb').addEventListener('touchstart', e => tx = e.touches[0].clientX, {passive: true});
+$('#lb').addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50 && lb) { lb.i = (lb.i + (dx < 0 ? 1 : -1) + lb.photos.length) % lb.photos.length; showLB(); } });
+
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 1800); }
+
+/* ---------- actions ---------- */
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-stop]')) return; // map/link taps shouldn't open the editor
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id;
+  if (el.tagName === 'BUTTON' && el.type !== 'submit') e.preventDefault();
+  switch (a) {
+    case 'tab': view = el.dataset.v; render(); window.scrollTo({top: document.querySelector('.tabs').offsetTop, behavior: 'smooth'}); break;
+    case 'fab':
+      if (view === 'board') openItemForm(item('visit', '', ''), 'board', true);
+      else openDayForm({id: uid(), date: nextDate(), title: '', notes: '', items: []}, true);
+      break;
+    case 'edit-trip': openTripForm(); break;
+    case 'menu': openMenu(); break;
+    case 'close': closeSheet(); break;
+    case 'edit-day': openDayForm(S.days.find(d => d.id === id), false); break;
+    case 'del-day': {
+      const d = S.days.find(x => x.id === id);
+      if (confirm(`Delete "${d.title || 'this day'}" and its ${d.items.length} item(s)?`)) { S.days = S.days.filter(x => x.id !== id); save(); closeSheet(); render(); }
+      break;
+    }
+    case 'add-item': openItemForm(item('visit', '', ''), el.dataset.day, true); break;
+    case 'edit-item': { const f = findItem(id); if (f) openItemForm(f.item, f.where, false); break; }
+    case 'del-item': {
+      const f = findItem(draft.item.id);
+      if (confirm('Delete this item?')) { f.list.splice(f.list.indexOf(f.item), 1); save(); closeSheet(); render(); }
+      break;
+    }
+    case 'pick-type':
+      draft.type = el.dataset.type;
+      document.querySelectorAll('.tchip').forEach(c => c.classList.toggle('on', c === el));
+      break;
+    case 'rm-photo': draft.photos.splice(+el.dataset.i, 1); renderPgrid(); break;
+    case 'add-url': {
+      const v = $('#imgUrl').value.trim();
+      if (/^https?:\/\//i.test(v)) { draft.photos.push(v); $('#imgUrl').value = ''; renderPgrid(); } else toast('Paste a link starting with http');
+      break;
+    }
+    case 'toggle': e.stopPropagation(); { const f = findItem(id); f.item.done = !f.item.done; save(); renderDays(); } return;
+    case 'photo': e.stopPropagation(); openLB(id, +el.dataset.i); return;
+    case 'lb-close': $('#lb').classList.remove('on'); break;
+    case 'lb-prev': lb.i = (lb.i - 1 + lb.photos.length) % lb.photos.length; showLB(); break;
+    case 'lb-next': lb.i = (lb.i + 1) % lb.photos.length; showLB(); break;
+    case 'pack-toggle': { const p = S.packing.find(x => x.id === id); p.done = !p.done; save(); renderPack(); break; }
+    case 'pack-del': S.packing = S.packing.filter(x => x.id !== id); save(); renderPack(); break;
+    case 'jump-today': { const d = S.days.find(x => x.date === todayISO()); document.getElementById('day-' + d.id)?.scrollIntoView({behavior: 'smooth', block: 'start'}); break; }
+    case 'offline-copy': closeSheet(); downloadOfflineCopy().catch(() => toast('Could not build the offline copy — are you online?')); break;
+    case 'token': askToken(); break;
+    case 'export': (async () => {
+      const blob = new Blob([JSON.stringify(await withInlinePhotos())], {type: 'application/json'});
+      const a2 = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: `arizona-scrapbook-${todayISO()}.json`});
+      document.body.appendChild(a2); a2.click(); a2.remove(); toast('Backup downloaded');
+    })(); break;
+    case 'import': $('#importFile').click(); break;
+    case 'clear-done': S.days.forEach(d => d.items.forEach(i => i.done = false)); save(); closeSheet(); render(); break;
+    case 'reset':
+      if (confirm('Erase the whole scrapbook? (Export a backup first if unsure)')) {
+        S = {trip: {title: 'Arizona', sub: '', start: '', end: ''}, days: [], board: [], packing: []}; save(); closeSheet(); render();
+      }
+      break;
+  }
+});
+function nextDate() {
+  const dated = S.days.filter(d => d.date).map(d => d.date).sort();
+  if (dated.length) { const d = parseDate(dated[dated.length - 1]); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); }
+  return S.trip.start || '';
+}
+$('#importFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!Array.isArray(d.days)) throw 0;
+    d.board ||= []; d.packing ||= []; d.trip ||= {title: 'Arizona'};
+    S = d; save(); render(); closeSheet(); toast('Scrapbook imported 🎉');
+  } catch (err) { toast('That file doesn’t look like a scrapbook backup'); }
+  e.target.value = '';
+};
+
+load().then(d => { S = d; render(); if (needPush) { ver++; flush(); } });
+</script>
+</body>
+</html>
