@@ -805,7 +805,7 @@ document.addEventListener('click', e => {
       draft.type = el.dataset.type;
       document.querySelectorAll('.tchip').forEach(c => c.classList.toggle('on', c === el));
       break;
-    case 'no-link': e.stopPropagation(); toast('Link not there'); return;
+    case 'no-link': e.stopPropagation(); toast('Link naat there'); return;
     case 'rm-photo': draft.photos.splice(+el.dataset.i, 1); renderPgrid(); break;
     case 'add-url': {
       const v = $('#imgUrl').value.trim();
