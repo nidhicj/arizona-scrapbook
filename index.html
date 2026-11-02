@@ -123,6 +123,7 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
 .reel .thumb{width:84px;height:110px;border-radius:6px;object-fit:cover;background:var(--sand);display:grid;place-items:center;font-size:34px}
 .reel h4{font-family:var(--hand);font-size:25px;margin:0;line-height:1.05;word-wrap:break-word}
 .reel .notes{margin-top:4px}
+.reel .reel-title{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;cursor:pointer}
 .reel.done{opacity:.6}.reel.done h4{text-decoration:line-through}
 .reel.done .check{background:var(--sage);border-color:var(--sage);color:#fff}
 
@@ -619,9 +620,11 @@ function renderReels() {
     const meta = [];
     if (it.place) meta.push(`<a href="${mapsUrl(it.place)}" target="_blank" rel="noopener" data-stop>🗺️ ${esc(it.place)}</a>`);
     if (it.link) meta.push(`<a href="${esc(it.link)}" target="_blank" rel="noopener" data-stop>▶️ Inspiration</a>`);
+    const href = it.link || ((it.notes || '').match(/https?:\/\/\S+/i) || [])[0] || '';
+    const title = esc(it.title || 'Untitled idea');
     return `<div class="reel ${it.done ? 'done' : ''}" style="--c:${TYPES.reel.c}" data-act="edit-item" data-id="${it.id}">
       ${it.photos?.length ? `<img class="thumb" src="${esc(pic(it.photos[0]))}" data-pic="${esc(it.photos[0])}" alt="" data-act="photo" data-id="${it.id}" data-i="0">` : '<div class="thumb">🎬</div>'}
-      <div style="min-width:0"><h4>${esc(it.title || 'Untitled idea')}</h4>
+      <div style="min-width:0"><h4>${href ? `<a class="reel-title" href="${esc(href)}" target="_blank" rel="noopener" data-stop>${title}</a>` : `<span class="reel-title" data-act="no-link">${title}</span>`}</h4>
         ${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}
         ${it.notes ? `<div class="notes">${esc(it.notes)}</div>` : ''}</div>
       <button class="check" data-act="toggle" data-id="${it.id}" aria-label="Mark filmed">${it.done ? '✓' : ''}</button>
@@ -802,6 +805,7 @@ document.addEventListener('click', e => {
       draft.type = el.dataset.type;
       document.querySelectorAll('.tchip').forEach(c => c.classList.toggle('on', c === el));
       break;
+    case 'no-link': e.stopPropagation(); toast('Link not there'); return;
     case 'rm-photo': draft.photos.splice(+el.dataset.i, 1); renderPgrid(); break;
     case 'add-url': {
       const v = $('#imgUrl').value.trim();
