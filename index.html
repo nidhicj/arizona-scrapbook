@@ -72,6 +72,8 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
 .fold{border:0;background:var(--sand);color:var(--ink);border-radius:8px;width:28px;height:28px;flex:none;display:grid;place-items:center;font-size:13px;padding:0}
 .card .fold{width:24px;height:24px;border-radius:7px;font-size:11px;background:var(--sand)}
 .tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.day-tools{display:flex;justify-content:flex-end;margin:-4px 0 6px}
+.day-tools .pill{font-size:12px;padding:5px 11px}
 .datebox{min-width:62px;text-align:center;border:2px dashed var(--line);border-radius:10px;padding:4px 6px}
 .datebox .d{font-family:var(--serif);font-weight:800;font-size:28px;line-height:1}
 .datebox .m{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
@@ -614,6 +616,7 @@ function renderDays() {
         <button class="pill" data-act="edit-day" data-id="${d.id}">Edit</button>
         <button class="fold" data-act="fold-day" data-id="${d.id}" aria-expanded="${open}" aria-label="${open ? 'Collapse day' : 'Expand day'}">${open ? '▾' : '▸'}</button>
       </div>
+      ${open && items.length ? `<div class="day-tools"><button class="pill" data-act="fold-day-all" data-id="${d.id}">${items.every(i => itemOpen(i, i.id === nextId)) ? '⊟ Collapse all stops' : '⊞ Expand all stops'}</button></div>` : ''}
       ${open ? `${items.length ? `<ul class="tl">${items.map(i => itemHTML(i, i.id === nextId)).join('')}</ul>` : '<p class="mini">Nothing planned yet.</p>'}
       <div class="add-row"><button class="add-btn" data-act="add-item" data-day="${d.id}">+ Add flight, meal, place, photo…</button></div>` : ''}
     </article>`;
@@ -865,6 +868,11 @@ document.addEventListener('click', e => {
       const d = S.days.find(x => x.items.some(i => i.id === id)); if (!d) break;
       const it = d.items.find(i => i.id === id);
       F.i[id] = !itemOpen(it, id === nextIdOf(d)); saveFold(); renderDays(); break;
+    }
+    case 'fold-day-all': {
+      const d = S.days.find(x => x.id === id); if (!d) break;
+      const n = nextIdOf(d), v = !d.items.every(i => itemOpen(i, i.id === n));
+      d.items.forEach(i => { F.i[i.id] = v; }); saveFold(); renderDays(); break;
     }
     case 'fold-all': {
       const v = !allOpen();
