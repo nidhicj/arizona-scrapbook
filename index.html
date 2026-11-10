@@ -211,7 +211,8 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
 .savebar.ok{color:var(--sage)}
 .savebar.wait{color:#8a5a00;background:#fff3d6;border-color:#f0d9a8}
 .savebar.auth{cursor:pointer}
-.savebar.auth,.savebar.copy{left:10px;text-align:center;background:#b3261e;color:#fff;border-color:#b3261e;border-radius:12px;padding:10px 14px;font-size:14px;opacity:1}
+.savebar.copy{left:10px;text-align:center;background:#b3261e;color:#fff;border-color:#b3261e;border-radius:12px;padding:10px 14px;font-size:14px;opacity:1}
+.savebar.auth{top:auto;bottom:22px;left:16px;right:auto;max-width:calc(100% - 200px);text-align:center;background:var(--ink);color:var(--paper);border-color:var(--ink);padding:7px 14px;font-size:12px;opacity:.92}
 .savebar.copy{background:var(--ink);border-color:var(--ink)}
 </style>
 </head>
@@ -323,7 +324,7 @@ function saveStatus(state) {
     saving: 'Saving…',
     ok: 'Synced ✓',
     wait: '📴 Offline — saved on this device, will sync when back online',
-    auth: '⚠️ Not syncing — tap here to connect your GitHub token',
+    auth: '👀 Demo trip · tap to connect your own GitHub',
     copy: '📦 Offline copy — edits stay on this device (use Export to keep them)',
   }[state];
 }
@@ -456,7 +457,7 @@ async function load() {
   // a stuck browser database must never keep the scrapbook from opening
   try { local = await Promise.race([idb.get(KEY), new Promise(res => setTimeout(res, 3000))]); } catch (e) {}
   if (OFFLINE) { saveStatus('copy'); return local?.savedAt > (OFFLINE.savedAt || 0) ? local : OFFLINE; }
-  if (!token) { saveStatus('auth'); setTimeout(askToken, 300); return local || seed(); }
+  if (!token) { saveStatus('auth'); return local || seed(); }  // visitors get the demo; the bar offers to connect
   try {
     const remote = await pullRemote();
     sha = remote.sha;
@@ -497,31 +498,56 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
 function item(type, start, title, extra = {}) {
   return {id: uid(), type, start, end: '', title, place: '', conf: '', link: '', notes: '', photos: [], done: false, ...extra};
 }
+// demo trip shown to visitors who haven't connected their own GitHub (no personal data); dates start today
 function seed() {
+  const day = n => { const d = new Date(); d.setDate(d.getDate() + n); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+  const M = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+  const MW = '⭐ MUST WATCH: ', OP = 'OPTIONAL: ';
+  const P = (cat, list) => list.map(t => ({id: uid(), text: `${cat} · ${t}`, done: false}));
   return {
-    trip: {title: 'Arizona', sub: 'red rocks, big skies & tacos', start: '', end: ''},
+    trip: {title: 'Arizona', sub: 'red rocks, big skies & tacos', start: day(0), end: day(2)},
     days: [
-      {id: uid(), date: '', title: 'Phoenix → Sedona', notes: 'Sample day — edit or delete me!', items: [
-        item('flight', '08:15', 'Land at PHX', {conf: 'Flight # / conf. code', notes: 'Pick up rental car at the Rental Car Center (shuttle from terminal)'}),
-        item('drive', '12:00', 'Drive up to Sedona (~2h)', {place: 'Sedona, AZ'}),
-        item('lunch', '14:00', 'Lunch in Uptown Sedona', {place: 'Uptown Sedona'}),
-        item('photo', '17:30', 'Sunset at Airport Mesa', {place: 'Airport Mesa, Sedona AZ', notes: 'Get there 45 min early for parking'}),
-        item('dinner', '19:30', 'Dinner', {}),
+      {id: uid(), date: day(0), title: 'Flagstaff → Grand Canyon → Page', notes: 'Demo trip — tap anything to edit. ⭐ MUST WATCH = rated 4.7+ with 1,000+ reviews.', items: [
+        item('breakfast', '04:30', 'Coffee & breakfast to go', {end: '05:00', notes: 'Pack gloves, layers, 2L water each, microspikes.'}),
+        item('drive', '05:00', 'Drive: Flagstaff → South Rim', {end: '06:30', notes: '79 mi, ~1 hr 30. Gas up in Tusayan.', link: M('Grand Canyon Visitor Center')}),
+        item('photo', '06:30', MW + 'Sunrise at Mather Point', {end: '07:30', link: M('Mather Point Grand Canyon'), notes: '🥾 Walk/hike: 0.2 mi paved, ~5 min each way\n🎟 Fee/permit: $35/car park entry (7 days)\n📊 Evidence: Google 4.8 (13,334); NPS recommends it for sunrise'}),
+        item('hike', '08:00', MW + 'South Kaibab to Ooh Aah Point', {end: '10:15', link: M('Ooh Aah Point Grand Canyon'), notes: '🥾 Walk/hike: 1.8 mi round trip, ~700 ft, ~1.5–2 hrs\n🎟 Fee/permit: none for day hikes\nUpper switchbacks can be icy in winter — wear microspikes.'}),
+        item('lunch', '11:30', 'Lunch at Market Plaza deli', {end: '12:15'}),
+        item('visit', '12:30', OP + 'Lookout & Kolb Studios', {end: '13:15', link: M('Lookout Studio Grand Canyon'), notes: '🥾 Flat paved rim walk\n📊 Evidence: Google 4.7 (365 / 460) — fewer reviews, so optional'}),
+        item('visit', '13:55', MW + 'Desert View Watchtower', {end: '14:45', link: M('Desert View Watchtower'), notes: '🥾 0.25 mi paved + tower stairs\n📊 Evidence: Google 4.8 (13,915)'}),
+        item('drive', '14:45', 'Drive to Page — arrive before dark', {end: '17:05', notes: 'Fill the tank in Cameron. Watch for livestock on the road.'}),
       ]},
-      {id: uid(), date: '', title: 'Grand Canyon day', notes: '', items: [
-        item('breakfast', '06:30', 'Early breakfast + coffee to go'),
-        item('visit', '10:00', 'South Rim — Mather Point', {place: 'Mather Point, Grand Canyon', end: '13:00'}),
-        item('hike', '14:00', 'Bright Angel Trail (first mile & back)', {place: 'Bright Angel Trailhead', notes: 'Carry 2L water + salty snacks'}),
-        item('photo', '18:00', 'Sunset at Hopi Point', {place: 'Hopi Point, Grand Canyon'}),
+      {id: uid(), date: day(1), title: 'Page, AZ', notes: '', items: [
+        item('photo', '06:30', MW + 'Sunrise at Wahweap Overlook', {end: '07:30', link: M('Wahweap Overlook Page AZ'), notes: '📊 Evidence: Google 4.7 (2,023)'}),
+        item('visit', '09:45', MW + 'Lower Antelope Canyon tour', {end: '11:15', conf: 'Tour ticket #', link: M('Lower Antelope Canyon'), notes: '🥾 ~1 mi with steep metal stairs\n🎟 Fee/permit: guided tour ticket required\n📊 Evidence: Google 4.8 (5,929)'}),
+        item('lunch', '11:30', 'Lunch in Page', {end: '12:45'}),
+        item('hike', '13:00', OP + 'The New Wave & Beehive Trail', {end: '14:00', link: M('Beehive Trailhead Page AZ'), notes: '📊 Evidence: Google 4.8 but only 51 reviews'}),
+        item('stay', '14:15', 'Hotel rest', {end: '15:45'}),
+        item('photo', '16:00', MW + 'Horseshoe Bend sunset', {end: '17:45', link: M('Horseshoe Bend Page AZ'), notes: '🥾 1.5 mi round trip, wide graded path\n🎟 $10 parking\n📊 Evidence: Google 4.8 (22,276); 831,631 NPS-counted visits in 2024'}),
+        item('dinner', '19:15', 'Dinner in Page', {end: '20:30'}),
+      ]},
+      {id: uid(), date: day(2), title: 'Hoodoos & the Colorado River', notes: '', items: [
+        item('breakfast', '07:45', 'Breakfast in Page', {end: '08:30'}),
+        item('hike', '09:35', MW + 'Toadstool Hoodoos', {end: '10:50', link: M('Toadstool Hoodoos Trailhead'), notes: '🥾 1.8 mi round trip, flat sandy wash\n🎟 Free, no permit\n📊 Evidence: AllTrails 4.7 (6,922)'}),
+        item('visit', '12:00', OP + 'Navajo Bridge & condors', {end: '12:20', link: M('Navajo Bridge Interpretive Center')}),
+        item('hike', '14:00', MW + 'Cathedral Wash', {end: '16:00', link: M('Cathedral Wash Trailhead'), notes: '🥾 3.3 mi round trip, hard — scrambling + a 30 ft downclimb\nSkip if rain is forecast.\n📊 Evidence: AllTrails 4.8 (~2,800)'}),
       ]},
     ],
     board: [
-      item('photo', '', 'Horseshoe Bend', {place: 'Horseshoe Bend, Page AZ', notes: 'Best light: mid-morning'}),
+      item('photo', '', 'Horseshoe Bend', {place: 'Horseshoe Bend, Page AZ', notes: 'Best light: late afternoon'}),
       item('ticket', '', 'Antelope Canyon', {place: 'Antelope Canyon, Page AZ', notes: 'Guided tour only — book ahead!'}),
       item('visit', '', 'Desert View Watchtower', {place: 'Desert View Watchtower, Grand Canyon'}),
     ],
-    packing: ['Sunscreen + lip balm','Wide-brim hat','Big water bottle (2L+)','Hiking shoes','Warm layer for cold desert nights','Sunglasses','Chargers + power bank']
-      .map(t => ({id: uid(), text: t, done: false})),
+    packing: [],
+    packLists: [
+      {id: 'me', name: 'Me', items: [...P('🧥 Clothing', ['Puffer jacket (sunrise at the rim is ~freezing)', 'Beanie + gloves', 'Hiking pants']),
+                                     ...P('👟 Footwear', ['Hiking shoes (grippy soles for slickrock)']), ...P('💊 Toiletries', ['Lip balm', 'Meds'])]},
+      {id: 'partner', name: 'Partner', items: [...P('🧥 Clothing', ['Puffer jacket', 'Fleece', 'Wool socks (1 pair per day)']),
+                                     ...P('👟 Footwear', ['Hiking shoes']), ...P('💊 Toiletries', ['Lip balm'])]},
+      {id: 'shared', name: 'Shared', items: [...P('🥾 Hiking', ['Microspikes (icy switchbacks)', 'Headlamps (4:30 AM start)', 'First-aid kit']),
+                                     ...P('📱 Electronics', ['Offline Google Maps for the whole route', 'Car charger + phone mount']), ...P('🚗 Car', ['Gallon of water in the car'])]},
+    ],
+    reels: [],
   };
 }
 
