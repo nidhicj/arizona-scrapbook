@@ -139,7 +139,13 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
 .list{background:var(--paper);border-radius:6px;padding:6px 14px 14px;box-shadow:0 10px 24px -14px rgba(90,50,20,.45)}
 .li{display:flex;gap:10px;align-items:flex-start;min-height:38px;padding:7px 0 6px;border-bottom:1px solid #ecdcc4}
 .li .check{margin-top:3px}
-.li span{flex:1;min-width:0;font-family:var(--sans);font-size:15px;line-height:1.35;word-wrap:break-word;padding-top:2px}
+.ptabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.ptab{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 13px;font-weight:600;font-size:14px;color:var(--ink)}
+.ptab small{color:var(--muted);font-weight:500;font-size:12px}
+.ptab.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.ptab.on small{color:var(--paper);opacity:.75}
+.ptab.ren{margin-left:auto;background:none;border-style:dashed;font-size:12px;color:var(--muted)}
+.li span{cursor:pointer;flex:1;min-width:0;font-family:var(--sans);font-size:15px;line-height:1.35;word-wrap:break-word;padding-top:2px}
 .li span small{display:block;font-size:12px;line-height:1.3;color:var(--muted);margin-top:1px}
 .li.done span{text-decoration:line-through;color:var(--muted)}
 .li.done span small{text-decoration:none}
@@ -327,7 +333,12 @@ const b64enc = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8
 const b64dec = s => Uint8Array.from(atob(s.replace(/\s/g, '')), c => c.charCodeAt(0));
 const toDataURL = blob => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
 const allItems = d => [...d.days.flatMap(x => x.items), ...(d.board || []), ...(d.reels || [])];
-const norm = d => { d.board ||= []; d.packing ||= []; d.reels ||= []; d.trip ||= {title: 'Arizona'}; return d; };
+const norm = d => {
+  d.board ||= []; d.packing ||= []; d.reels ||= []; d.trip ||= {title: 'Arizona'};
+  // packing lists per person; older data had one flat list, which becomes the Shared list
+  if (!Array.isArray(d.packLists) || !d.packLists.length) d.packLists = [{id: 'shared', name: 'Shared', items: JSON.parse(JSON.stringify(d.packing))}];
+  return d;
+};
 
 async function gh(path, opts = {}) {
   const r = await fetch(GH + path, {cache: 'no-store', ...opts, headers: {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', ...opts.headers}});
@@ -646,9 +657,9 @@ function renderBoard() {
 }
 
 // "🧥 Clothing · Fleece (warm)" → category "🧥 Clothing"; items without a category go under "✏️ Other"
-function packGroups() {
+function packGroups(list) {
   const g = new Map();
-  S.packing.forEach(p => {
+  list.forEach(p => {
     const m = p.text.match(/^(.{1,30}?) · (.+)$/s), cat = m ? m[1] : '✏️ Other';
     if (!g.has(cat)) g.set(cat, []);
     g.get(cat).push(p);
@@ -662,17 +673,43 @@ function packSplit(text) {
   const m = t.match(/^(.+?) (?:\((.+)\)|[—–] (.+))$/s);
   return m ? [m[1], m[2] || m[3]] : [t, ''];
 }
+let packTab = null;
+try { packTab = localStorage.getItem('pack-tab'); } catch (e) {}
+const curPack = () => S.packLists.find(l => l.id === packTab) || S.packLists[0];
+const findPack = id => { for (const l of S.packLists) { const p = l.items.find(x => x.id === id); if (p) return {p, l}; } return {}; };
 function renderPack() {
-  const done = S.packing.filter(p => p.done).length;
-  $('#v-pack').innerHTML = `<div class="toolbar"><h2>Packing list</h2><span class="mini">${done}/${S.packing.length} packed</span></div>
-    <div class="list">${packGroups().map(([cat, items]) => `<div class="pack-h">${esc(cat)} <small>${items.filter(p => p.done).length}/${items.length}</small></div>`
+  const L = curPack(), done = L.items.filter(p => p.done).length;
+  $('#v-pack').innerHTML = `<div class="toolbar"><h2>Packing list</h2><span class="mini">${done}/${L.items.length} packed</span></div>
+    <div class="ptabs">${S.packLists.map(l => `<button class="ptab ${l === L ? 'on' : ''}" data-act="pack-tab" data-id="${l.id}">${esc(l.name)} <small>${l.items.filter(p => p.done).length}/${l.items.length}</small></button>`).join('')}
+      <button class="ptab ren" data-act="pack-rename" data-id="${L.id}" aria-label="Rename this list">✎ Rename</button></div>
+    <div class="list">${packGroups(L.items).map(([cat, items]) => `<div class="pack-h">${esc(cat)} <small>${items.filter(p => p.done).length}/${items.length}</small></div>`
       + items.map(p => { const [main, detail] = packSplit(p.text); return `<div class="li ${p.done ? 'done' : ''}">
         <button class="check" data-act="pack-toggle" data-id="${p.id}">${p.done ? '✓' : ''}</button>
-        <span>${esc(main)}${detail ? `<small>${esc(detail)}</small>` : ''}</span><button class="x" data-act="pack-del" data-id="${p.id}" aria-label="Remove">×</button></div>`; }).join('')).join('')}</div>
-    <form class="addline" id="packForm"><input name="t" placeholder="Add something to pack…" autocomplete="off"><button class="btn">Add</button></form>`;
+        <span data-act="pack-edit" data-id="${p.id}">${esc(main)}${detail ? `<small>${esc(detail)}</small>` : ''}</span><button class="x" data-act="pack-del" data-id="${p.id}" aria-label="Remove">×</button></div>`; }).join('')).join('')
+      || '<p class="mini">Nothing on this list yet.</p>'}</div>
+    <form class="addline" id="packForm"><input name="t" placeholder="Add to ${esc(L.name)}’s list…" autocomplete="off"><button class="btn">Add</button></form>`;
   $('#packForm').onsubmit = e => {
     e.preventDefault(); const v = e.target.t.value.trim(); if (!v) return;
-    S.packing.push({id: uid(), text: v, done: false}); save(); renderPack(); $('#packForm input').focus();
+    L.items.push({id: uid(), text: v, done: false}); save(); renderPack(); $('#packForm input').focus();
+  };
+}
+function openPackForm(p) {
+  const [main, detail] = packSplit(p.text), m = p.text.match(/^(.{1,30}?) · /s), cat = m ? m[1] : '';
+  const cats = [...new Set(S.packLists.flatMap(l => packGroups(l.items).map(g => g[0])))].filter(c => c !== '✏️ Other');
+  openSheet(`<form class="f" id="packEdit">
+    <div class="sheet-head"><h3>Edit item</h3><button type="button" class="icon-btn" style="background:var(--sand)" data-act="close">✕</button></div>
+    <label>Item<input name="main" value="${esc(main)}" required></label>
+    <label>Detail (small grey line, optional)<input name="detail" value="${esc(detail)}" placeholder="e.g. for the 4:30 AM start"></label>
+    <label>Category<input name="cat" value="${esc(cat)}" list="packCats" placeholder="Pick or type one — blank = Other"></label>
+    <datalist id="packCats">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
+    <div class="actions"><button type="button" class="btn danger" data-act="pack-del" data-id="${p.id}">Delete</button><button class="btn">Save ✓</button></div>
+  </form>`);
+  $('#packEdit').onsubmit = e => {
+    e.preventDefault(); const fd = new FormData(e.target);
+    const mn = fd.get('main').trim().replace(/ · /g, ' - '), dt = fd.get('detail').trim(), c = fd.get('cat').trim().replace(/ · /g, ' - ');
+    if (!mn) return;
+    p.text = (c ? c + ' · ' : '') + mn + (dt ? ` (${dt.replace(/[()]/g, '')})` : '');
+    save(); closeSheet(); renderPack();
   };
 }
 
@@ -881,8 +918,15 @@ document.addEventListener('click', e => {
     case 'lb-close': $('#lb').classList.remove('on'); break;
     case 'lb-prev': lb.i = (lb.i - 1 + lb.photos.length) % lb.photos.length; showLB(); break;
     case 'lb-next': lb.i = (lb.i + 1) % lb.photos.length; showLB(); break;
-    case 'pack-toggle': { const p = S.packing.find(x => x.id === id); p.done = !p.done; save(); renderPack(); break; }
-    case 'pack-del': S.packing = S.packing.filter(x => x.id !== id); save(); renderPack(); break;
+    case 'pack-toggle': { const {p} = findPack(id); if (p) { p.done = !p.done; save(); renderPack(); } break; }
+    case 'pack-del': { const {l} = findPack(id); if (l) { l.items = l.items.filter(x => x.id !== id); save(); closeSheet(); renderPack(); } break; }
+    case 'pack-edit': { const {p} = findPack(id); if (p) openPackForm(p); break; }
+    case 'pack-tab': packTab = id; try { localStorage.setItem('pack-tab', id); } catch (e) {} renderPack(); break;
+    case 'pack-rename': {
+      const l = S.packLists.find(x => x.id === id); if (!l) break;
+      const n = prompt('Name for this list', l.name); if (n && n.trim()) { l.name = n.trim().slice(0, 24); save(); renderPack(); }
+      break;
+    }
     case 'fold-day': {
       const d = S.days.find(x => x.id === id); if (!d) break;
       F.d[id] = !dayOpen(d); saveFold(); renderDays(); break;
@@ -914,7 +958,7 @@ document.addEventListener('click', e => {
     case 'clear-done': S.days.forEach(d => d.items.forEach(i => i.done = false)); save(); closeSheet(); render(); break;
     case 'reset':
       if (confirm('Erase the whole scrapbook? (Export a backup first if unsure)')) {
-        S = {trip: {title: 'Arizona', sub: '', start: '', end: ''}, days: [], board: [], packing: [], reels: []}; save(); closeSheet(); render();
+        S = norm({trip: {title: 'Arizona', sub: '', start: '', end: ''}, days: [], board: [], packing: [], reels: []}); save(); closeSheet(); render();
       }
       break;
   }
