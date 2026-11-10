@@ -136,11 +136,18 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
 .reel.done .check{background:var(--sage);border-color:var(--sage);color:#fff}
 
 /* ---------- packing ---------- */
-.list{background:var(--paper);border-radius:6px;padding:14px;box-shadow:0 10px 24px -14px rgba(90,50,20,.45);
-  background-image:repeating-linear-gradient(transparent 0 37px,#ecdcc4 37px 38px)}
-.li{display:flex;gap:10px;align-items:center;height:38px}
-.li span{flex:1;font-family:var(--hand);font-size:23px}
+.list{background:var(--paper);border-radius:6px;padding:6px 14px 14px;box-shadow:0 10px 24px -14px rgba(90,50,20,.45)}
+.li{display:flex;gap:10px;align-items:flex-start;min-height:38px;padding:7px 0 6px;border-bottom:1px solid #ecdcc4}
+.li .check{margin-top:3px}
+.li span{flex:1;min-width:0;font-family:var(--hand);font-size:21px;line-height:1.15;word-wrap:break-word}
+.li span small{display:block;font-family:var(--sans,inherit);font-size:12px;line-height:1.3;color:var(--muted);margin-top:2px}
 .li.done span{text-decoration:line-through;color:var(--muted)}
+.li.done span small{text-decoration:none}
+.pack-h{display:flex;align-items:center;gap:8px;margin:18px 0 2px;font-family:var(--hand);font-size:24px;color:var(--terra)}
+.pack-h:first-child{margin-top:8px}
+.pack-h::before,.pack-h::after{content:"";flex:1;border-top:2px dashed var(--line)}
+.pack-h::before{flex:0 0 14px}
+.pack-h small{font-family:inherit;font-size:16px;color:var(--muted)}
 .li.done .check{background:var(--sage);border-color:var(--sage);color:#fff}
 .li .x{color:var(--muted);font-size:18px;padding:0 6px}
 .addline{display:flex;gap:8px;margin-top:12px}
@@ -640,12 +647,30 @@ function renderBoard() {
   el.innerHTML = html;
 }
 
+// "🧥 Clothing · Fleece (warm)" → category "🧥 Clothing"; items without a category go under "✏️ Other"
+function packGroups() {
+  const g = new Map();
+  S.packing.forEach(p => {
+    const m = p.text.match(/^(.{1,30}?) · (.+)$/s), cat = m ? m[1] : '✏️ Other';
+    if (!g.has(cat)) g.set(cat, []);
+    g.get(cat).push(p);
+  });
+  const other = g.get('✏️ Other'); if (other) { g.delete('✏️ Other'); g.set('✏️ Other', other); }
+  return [...g];
+}
+// item text minus category, split into the thing itself and a smaller detail line: "Fleece (warm)" / "Fleece — warm"
+function packSplit(text) {
+  const t = text.replace(/^.{1,30}? · /s, '');
+  const m = t.match(/^(.+?) (?:\((.+)\)|[—–] (.+))$/s);
+  return m ? [m[1], m[2] || m[3]] : [t, ''];
+}
 function renderPack() {
   const done = S.packing.filter(p => p.done).length;
   $('#v-pack').innerHTML = `<div class="toolbar"><h2>Packing list</h2><span class="mini">${done}/${S.packing.length} packed</span></div>
-    <div class="list">${S.packing.map(p => `<div class="li ${p.done ? 'done' : ''}">
+    <div class="list">${packGroups().map(([cat, items]) => `<div class="pack-h">${esc(cat)} <small>${items.filter(p => p.done).length}/${items.length}</small></div>`
+      + items.map(p => { const [main, detail] = packSplit(p.text); return `<div class="li ${p.done ? 'done' : ''}">
         <button class="check" data-act="pack-toggle" data-id="${p.id}">${p.done ? '✓' : ''}</button>
-        <span>${esc(p.text)}</span><button class="x" data-act="pack-del" data-id="${p.id}" aria-label="Remove">×</button></div>`).join('')}</div>
+        <span>${esc(main)}${detail ? `<small>${esc(detail)}</small>` : ''}</span><button class="x" data-act="pack-del" data-id="${p.id}" aria-label="Remove">×</button></div>`; }).join('')).join('')}</div>
     <form class="addline" id="packForm"><input name="t" placeholder="Add something to pack…" autocomplete="off"><button class="btn">Add</button></form>`;
   $('#packForm').onsubmit = e => {
     e.preventDefault(); const v = e.target.t.value.trim(); if (!v) return;
