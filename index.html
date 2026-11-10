@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#e8763f">
-<title>Arizona Scrapbook</title>
+<title>Trip Scrapbook</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,500;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -204,6 +204,7 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
 .lb .cap{position:absolute;bottom:18px;color:#fff;font-family:var(--hand);font-size:24px}
 .empty{text-align:center;padding:30px 10px;color:var(--muted)}
 .empty .big{font-size:44px}
+.empty.start b{font-size:18px;color:var(--ink)}.start-btns{display:flex;gap:8px;justify-content:center;margin:16px 0 10px;flex-wrap:wrap}.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;z-index:70;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
 .savebar{position:fixed;top:10px;right:10px;z-index:80;background:var(--paper);color:var(--muted);border:1px solid var(--line);padding:4px 11px;border-radius:999px;font:12px var(--sans);opacity:.9}
@@ -212,8 +213,9 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
 .savebar.wait{color:#8a5a00;background:#fff3d6;border-color:#f0d9a8}
 .savebar.auth{cursor:pointer}
 .savebar.copy{left:10px;text-align:center;background:#b3261e;color:#fff;border-color:#b3261e;border-radius:12px;padding:10px 14px;font-size:14px;opacity:1}
-.savebar.auth{top:auto;bottom:22px;left:16px;right:auto;max-width:calc(100% - 200px);text-align:center;background:var(--ink);color:var(--paper);border-color:var(--ink);padding:7px 14px;font-size:12px;opacity:.92}
+.savebar.auth,.savebar.local{top:auto;bottom:22px;left:16px;right:auto;max-width:calc(100% - 200px);text-align:center;background:var(--ink);color:var(--paper);border-color:var(--ink);padding:7px 14px;font-size:12px;opacity:.92}
 .savebar.copy{background:var(--ink);border-color:var(--ink)}
+.scrim.on ~ .savebar{display:none}
 </style>
 </head>
 <body>
@@ -225,8 +227,8 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
       <button class="icon-btn" data-act="edit-trip" title="Edit trip">✏️</button>
       <button class="icon-btn" data-act="menu" title="Menu">☰</button>
     </div>
-    <p class="kicker" id="hTravelers">our little desert adventure</p>
-    <h1 id="hTitle">Arizona</h1>
+    <p class="kicker" id="hTravelers">our next adventure</p>
+    <h1 id="hTitle">My Trip</h1>
     <div class="hero-meta" id="hMeta"></div>
   </div>
   <svg viewBox="0 0 1200 110" preserveAspectRatio="none" aria-hidden="true">
@@ -324,18 +326,19 @@ function saveStatus(state) {
     saving: 'Saving…',
     ok: 'Synced ✓',
     wait: '📴 Offline — saved on this device, will sync when back online',
-    auth: '👀 Demo trip · tap to connect your own GitHub',
+    local: '🔒 Private · this device only',
+    auth: '⚠️ Sync stopped · tap to fix the GitHub token',
     copy: '📦 Offline copy — edits stay on this device (use Export to keep them)',
   }[state];
 }
-$('#savebar').onclick = () => { if ($('#savebar').classList.contains('auth')) askToken(); };
+$('#savebar').onclick = () => { const c = $('#savebar').classList; if (c.contains('auth')) askToken(); else if (c.contains('local')) openPrivacy(); };
 
 const b64enc = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s); };
 const b64dec = s => Uint8Array.from(atob(s.replace(/\s/g, '')), c => c.charCodeAt(0));
 const toDataURL = blob => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
 const allItems = d => [...d.days.flatMap(x => x.items), ...(d.board || []), ...(d.reels || [])];
 const norm = d => {
-  d.board ||= []; d.packing ||= []; d.reels ||= []; d.trip ||= {title: 'Arizona'};
+  d.board ||= []; d.packing ||= []; d.reels ||= []; d.trip ||= {title: ''};
   // packing lists per person; older data had one flat list, which becomes the Shared list
   if (!Array.isArray(d.packLists) || !d.packLists.length) d.packLists = [{id: 'shared', name: 'Shared', items: JSON.parse(JSON.stringify(d.packing))}];
   return d;
@@ -437,7 +440,7 @@ function save() {
     const v = ver;
     try { await idb.set(KEY, S); cachedVer = v; } catch (e) { toast('⚠️ Could not save on this device — Export a backup!'); }
     if (OFFLINE) return;
-    if (!token) return saveStatus('auth');
+    if (!token) return saveStatus('local');
     flush();
   }, 1500);
 }
@@ -457,7 +460,7 @@ async function load() {
   // a stuck browser database must never keep the scrapbook from opening
   try { local = await Promise.race([idb.get(KEY), new Promise(res => setTimeout(res, 3000))]); } catch (e) {}
   if (OFFLINE) { saveStatus('copy'); return local?.savedAt > (OFFLINE.savedAt || 0) ? local : OFFLINE; }
-  if (!token) { saveStatus('auth'); return local || seed(); }  // visitors get the demo; the bar offers to connect
+  if (!token) { saveStatus('local'); return local || seed(); }  // no account: the trip lives only in this browser
   try {
     const remote = await pullRemote();
     sha = remote.sha;
@@ -490,7 +493,7 @@ async function downloadOfflineCopy() {
   const src = await (await fetch(location.href.split('#')[0])).text();
   const data = JSON.stringify(await withInlinePhotos()).replace(/</g, '\\u003c');
   const html = src.replace('<script>', () => `<script>window.OFFLINE_SCRAPBOOK = ${data};<\/script>\n<script>`);
-  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(new Blob([html], {type: 'text/html'})), download: `arizona-scrapbook-offline-${todayISO()}.html`});
+  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(new Blob([html], {type: 'text/html'})), download: `trip-scrapbook-offline-${todayISO()}.html`});
   document.body.appendChild(a); a.click(); a.remove(); toast('Offline copy downloaded');
 }
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -498,57 +501,23 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
 function item(type, start, title, extra = {}) {
   return {id: uid(), type, start, end: '', title, place: '', conf: '', link: '', notes: '', photos: [], done: false, ...extra};
 }
-// demo trip shown to visitors who haven't connected their own GitHub (no personal data); dates start today
+// a new visitor starts with a blank scrapbook that lives only on their device
 function seed() {
-  const day = n => { const d = new Date(); d.setDate(d.getDate() + n); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
-  const M = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
-  const MW = '⭐ MUST WATCH: ', OP = 'OPTIONAL: ';
-  const P = (cat, list) => list.map(t => ({id: uid(), text: `${cat} · ${t}`, done: false}));
   return {
-    trip: {title: 'Arizona', sub: 'red rocks, big skies & tacos', start: day(0), end: day(2)},
-    days: [
-      {id: uid(), date: day(0), title: 'Flagstaff → Grand Canyon → Page', notes: 'Demo trip — tap anything to edit. ⭐ MUST WATCH = rated 4.7+ with 1,000+ reviews.', items: [
-        item('breakfast', '04:30', 'Coffee & breakfast to go', {end: '05:00', notes: 'Pack gloves, layers, 2L water each, microspikes.'}),
-        item('drive', '05:00', 'Drive: Flagstaff → South Rim', {end: '06:30', notes: '79 mi, ~1 hr 30. Gas up in Tusayan.', link: M('Grand Canyon Visitor Center')}),
-        item('photo', '06:30', MW + 'Sunrise at Mather Point', {end: '07:30', link: M('Mather Point Grand Canyon'), notes: '🥾 Walk/hike: 0.2 mi paved, ~5 min each way\n🎟 Fee/permit: $35/car park entry (7 days)\n📊 Evidence: Google 4.8 (13,334); NPS recommends it for sunrise'}),
-        item('hike', '08:00', MW + 'South Kaibab to Ooh Aah Point', {end: '10:15', link: M('Ooh Aah Point Grand Canyon'), notes: '🥾 Walk/hike: 1.8 mi round trip, ~700 ft, ~1.5–2 hrs\n🎟 Fee/permit: none for day hikes\nUpper switchbacks can be icy in winter — wear microspikes.'}),
-        item('lunch', '11:30', 'Lunch at Market Plaza deli', {end: '12:15'}),
-        item('visit', '12:30', OP + 'Lookout & Kolb Studios', {end: '13:15', link: M('Lookout Studio Grand Canyon'), notes: '🥾 Flat paved rim walk\n📊 Evidence: Google 4.7 (365 / 460) — fewer reviews, so optional'}),
-        item('visit', '13:55', MW + 'Desert View Watchtower', {end: '14:45', link: M('Desert View Watchtower'), notes: '🥾 0.25 mi paved + tower stairs\n📊 Evidence: Google 4.8 (13,915)'}),
-        item('drive', '14:45', 'Drive to Page — arrive before dark', {end: '17:05', notes: 'Fill the tank in Cameron. Watch for livestock on the road.'}),
-      ]},
-      {id: uid(), date: day(1), title: 'Page, AZ', notes: '', items: [
-        item('photo', '06:30', MW + 'Sunrise at Wahweap Overlook', {end: '07:30', link: M('Wahweap Overlook Page AZ'), notes: '📊 Evidence: Google 4.7 (2,023)'}),
-        item('visit', '09:45', MW + 'Lower Antelope Canyon tour', {end: '11:15', conf: 'Tour ticket #', link: M('Lower Antelope Canyon'), notes: '🥾 ~1 mi with steep metal stairs\n🎟 Fee/permit: guided tour ticket required\n📊 Evidence: Google 4.8 (5,929)'}),
-        item('lunch', '11:30', 'Lunch in Page', {end: '12:45'}),
-        item('hike', '13:00', OP + 'The New Wave & Beehive Trail', {end: '14:00', link: M('Beehive Trailhead Page AZ'), notes: '📊 Evidence: Google 4.8 but only 51 reviews'}),
-        item('stay', '14:15', 'Hotel rest', {end: '15:45'}),
-        item('photo', '16:00', MW + 'Horseshoe Bend sunset', {end: '17:45', link: M('Horseshoe Bend Page AZ'), notes: '🥾 1.5 mi round trip, wide graded path\n🎟 $10 parking\n📊 Evidence: Google 4.8 (22,276); 831,631 NPS-counted visits in 2024'}),
-        item('dinner', '19:15', 'Dinner in Page', {end: '20:30'}),
-      ]},
-      {id: uid(), date: day(2), title: 'Hoodoos & the Colorado River', notes: '', items: [
-        item('breakfast', '07:45', 'Breakfast in Page', {end: '08:30'}),
-        item('hike', '09:35', MW + 'Toadstool Hoodoos', {end: '10:50', link: M('Toadstool Hoodoos Trailhead'), notes: '🥾 1.8 mi round trip, flat sandy wash\n🎟 Free, no permit\n📊 Evidence: AllTrails 4.7 (6,922)'}),
-        item('visit', '12:00', OP + 'Navajo Bridge & condors', {end: '12:20', link: M('Navajo Bridge Interpretive Center')}),
-        item('hike', '14:00', MW + 'Cathedral Wash', {end: '16:00', link: M('Cathedral Wash Trailhead'), notes: '🥾 3.3 mi round trip, hard — scrambling + a 30 ft downclimb\nSkip if rain is forecast.\n📊 Evidence: AllTrails 4.8 (~2,800)'}),
-      ]},
-    ],
-    board: [
-      item('photo', '', 'Horseshoe Bend', {place: 'Horseshoe Bend, Page AZ', notes: 'Best light: late afternoon'}),
-      item('ticket', '', 'Antelope Canyon', {place: 'Antelope Canyon, Page AZ', notes: 'Guided tour only — book ahead!'}),
-      item('visit', '', 'Desert View Watchtower', {place: 'Desert View Watchtower, Grand Canyon'}),
-    ],
-    packing: [],
-    packLists: [
-      {id: 'me', name: 'Me', items: [...P('🧥 Clothing', ['Puffer jacket (sunrise at the rim is ~freezing)', 'Beanie + gloves', 'Hiking pants']),
-                                     ...P('👟 Footwear', ['Hiking shoes (grippy soles for slickrock)']), ...P('💊 Toiletries', ['Lip balm', 'Meds'])]},
-      {id: 'partner', name: 'Partner', items: [...P('🧥 Clothing', ['Puffer jacket', 'Fleece', 'Wool socks (1 pair per day)']),
-                                     ...P('👟 Footwear', ['Hiking shoes']), ...P('💊 Toiletries', ['Lip balm'])]},
-      {id: 'shared', name: 'Shared', items: [...P('🥾 Hiking', ['Microspikes (icy switchbacks)', 'Headlamps (4:30 AM start)', 'First-aid kit']),
-                                     ...P('📱 Electronics', ['Offline Google Maps for the whole route', 'Car charger + phone mount']), ...P('🚗 Car', ['Gallon of water in the car'])]},
-    ],
-    reels: [],
+    trip: {title: '', sub: '', start: '', end: ''},
+    days: [], board: [], packing: [], reels: [],
+    packLists: [{id: 'me', name: 'Me', items: []}, {id: 'partner', name: 'Partner', items: []}, {id: 'shared', name: 'Shared', items: []}],
   };
+}
+function openPrivacy() {
+  openSheet(`<div class="sheet-head"><h3>🔒 Your trip is private</h3><button class="icon-btn" style="background:var(--sand)" data-act="close">✕</button></div>
+    <p class="hint">Everything you add is saved <b>only in this browser on this device</b>. There's no account and no server, and nothing is sent anywhere. Not even the person who made this page can see it.</p>
+    <p class="hint">Because it lives on this device, clearing your browser data deletes it. Export a backup now and then, and use the same file to move your trip to another phone.</p>
+    <div class="menu-list">
+      <button data-act="export">💾 Export backup</button>
+      <button data-act="import">📂 Import backup</button>
+      <button data-act="token">🔗 Sync across devices (advanced)</button>
+    </div>`);
 }
 
 /* ---------- render ---------- */
@@ -556,9 +525,9 @@ let S, view = 'days';
 
 function renderHero() {
   const t = S.trip;
-  $('#hTitle').textContent = t.title || 'Arizona';
-  $('#hTravelers').textContent = t.sub || 'our little desert adventure';
-  document.title = (t.title || 'Arizona') + ' Scrapbook';
+  $('#hTitle').textContent = t.title || 'My Trip';
+  $('#hTravelers').textContent = t.sub || 'our next adventure';
+  document.title = (t.title || 'Trip') + ' Scrapbook';
   const chips = [];
   if (t.start) {
     const s = parseDate(t.start), e = parseDate(t.end || t.start), now = parseDate(todayISO());
@@ -638,7 +607,9 @@ function renderDays() {
   const tools = (hasToday ? '<button class="pill" data-act="jump-today">☀️ Jump to today</button>' : '')
     + (S.days.length ? `<button class="pill" data-act="fold-all">${allOpen() ? '⊟ Collapse all' : '⊞ Expand all'}</button>` : '');
   let html = `<div class="toolbar"><h2>Day by day</h2><div class="tools">${tools}</div></div>`;
-  if (!S.days.length) html += `<div class="empty"><div class="big">🌵</div>No days yet — tap <b>+ Add day</b> to start your scrapbook.</div>`;
+  if (!S.days.length) html += `<div class="empty start"><div class="big">🧳</div><b>Start your trip</b><br>Name it, add your dates, then add a day for each stop on the way.
+    <div class="start-btns"><button class="btn" data-act="edit-trip">✏️ Name your trip</button><button class="btn ghost" data-act="fab">+ Add first day</button></div>
+    <p class="mini">🔒 Saved only on this device. No sign-up.</p></div>`;
   S.days.forEach((d, idx) => {
     const dt = parseDate(d.date), items = [...d.items].sort(byTime);
     const nextId = nextIdOf(d), open = dayOpen(d);
@@ -882,10 +853,10 @@ function openMenu() {
       <button data-act="export">💾 Export backup (includes photos)</button>
       <button data-act="import">📂 Import backup</button>
       <button data-act="clear-done">🧹 Un-check all done items</button>
-      ${OFFLINE ? '' : '<button data-act="token">🔑 Change GitHub token</button>'}
+      ${OFFLINE ? '' : `<button data-act="token">${token ? '🔑 Change GitHub token' : '🔗 Sync across devices (advanced)'}</button>`}
       <button data-act="reset" style="color:#b3261e">🗑️ Start fresh (erase everything)</button>
     </div>
-    <p class="hint">${OFFLINE ? 'This is an offline copy: edits stay on this device. Export a backup and import it into the online scrapbook to keep them.' : `Saved to your private GitHub repo ${REPO} — every change is in its history.`}</p>`);
+    <p class="hint">${OFFLINE ? 'This is an offline copy: edits stay on this device. Export a backup and import it into the online scrapbook to keep them.' : (token ? `Saved to your private GitHub repo ${REPO} — every change is in its history.` : '🔒 Saved only in this browser on this device. Nothing is sent anywhere. Export a backup to keep it safe or move it to another phone.')}</p>`);
 }
 
 /* ---------- lightbox ---------- */
@@ -977,14 +948,14 @@ document.addEventListener('click', e => {
     case 'token': askToken(); break;
     case 'export': (async () => {
       const blob = new Blob([JSON.stringify(await withInlinePhotos())], {type: 'application/json'});
-      const a2 = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: `arizona-scrapbook-${todayISO()}.json`});
+      const a2 = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: `trip-scrapbook-${todayISO()}.json`});
       document.body.appendChild(a2); a2.click(); a2.remove(); toast('Backup downloaded');
     })(); break;
     case 'import': $('#importFile').click(); break;
     case 'clear-done': S.days.forEach(d => d.items.forEach(i => i.done = false)); save(); closeSheet(); render(); break;
     case 'reset':
       if (confirm('Erase the whole scrapbook? (Export a backup first if unsure)')) {
-        S = norm({trip: {title: 'Arizona', sub: '', start: '', end: ''}, days: [], board: [], packing: [], reels: []}); save(); closeSheet(); render();
+        S = norm({trip: {title: '', sub: '', start: '', end: ''}, days: [], board: [], packing: [], reels: []}); save(); closeSheet(); render();
       }
       break;
   }
