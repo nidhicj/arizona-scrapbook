@@ -65,7 +65,13 @@ main{max-width:760px;margin:0 auto;padding:18px 16px}
 .page:nth-child(3n+2)::before{background:repeating-linear-gradient(45deg,rgba(111,138,92,.5) 0 8px,rgba(111,138,92,.32) 8px 16px)}
 .page:nth-child(3n)::before{background:repeating-linear-gradient(45deg,rgba(208,96,122,.45) 0 8px,rgba(208,96,122,.28) 8px 16px)}
 .page.today{outline:3px solid var(--sun);outline-offset:4px}
-.day-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.page{scroll-margin-top:84px}
+.day-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;cursor:pointer}
+.page.folded .day-head{margin-bottom:0}
+.day-sum{font-size:13px;color:var(--muted);font-weight:600;margin:4px 0 0}
+.fold{border:0;background:var(--sand);color:var(--ink);border-radius:8px;width:28px;height:28px;flex:none;display:grid;place-items:center;font-size:13px;padding:0}
+.card .fold{width:24px;height:24px;border-radius:7px;font-size:11px;background:var(--sand)}
+.tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .datebox{min-width:62px;text-align:center;border:2px dashed var(--line);border-radius:10px;padding:4px 6px}
 .datebox .d{font-family:var(--serif);font-weight:800;font-size:28px;line-height:1}
 .datebox .m{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
@@ -535,23 +541,48 @@ function photoStrip(it) {
     `<div class="polaroid" data-act="photo" data-id="${it.id}" data-i="${i}"><img loading="lazy" src="${esc(pic(p))}" data-pic="${esc(p)}" alt=""></div>`).join('')}</div>`;
 }
 
+/* ---------- fold state (Itinerary): kept per device in localStorage ---------- */
+// F.d[dayId] / F.i[itemId] = true (open) | false (folded); missing = default:
+// a day is open only if it is today; a stop is open only if it is today's "up next".
+// F.auto[date] marks that a trip day was already auto-opened once on this device.
+const FOLD_KEY = 'scrapbook-fold-v1';
+let F = {d: {}, i: {}, auto: {}};
+try { F = Object.assign(F, JSON.parse(localStorage.getItem(FOLD_KEY) || '{}')); } catch (e) {}
+const saveFold = () => { try { localStorage.setItem(FOLD_KEY, JSON.stringify(F)); } catch (e) {} };
+const nextIdOf = d => d.date === todayISO() ? ([...d.items].sort(byTime).find(i => !i.done && (i.start || '99') >= nowHM()) || {}).id : null;
+const dayOpen = d => d.id in F.d ? F.d[d.id] : d.date === todayISO();
+const itemOpen = (it, isNext) => it.id in F.i ? F.i[it.id] : isNext;
+const allOpen = () => S.days.every(d => { const n = nextIdOf(d); return dayOpen(d) && d.items.every(i => itemOpen(i, i.id === n)); });
+// first open of the page on a trip day: open that day and its "up next" stop, whatever was stored before
+function autoOpenToday() {
+  const t = todayISO(), d = S.days.find(x => x.date === t);
+  if (!d || F.auto[t]) return;
+  F.auto[t] = 1; F.d[d.id] = true;
+  const n = nextIdOf(d); if (n) F.i[n] = true;
+  saveFold();
+}
+
 function itemHTML(it, isNext) {
   const T = TYPES[it.type] || TYPES.note;
+  const open = itemOpen(it, isNext);
   const meta = [];
   if (it.place) meta.push(`<a href="${mapsUrl(it.place)}" target="_blank" rel="noopener" data-stop>🗺️ ${esc(it.place)}</a>`);
-  if (it.conf) meta.push(`<span>🔖 ${esc(it.conf)}</span>`);
+  if (it.conf && open) meta.push(`<span>🔖 ${esc(it.conf)}</span>`);
   if (it.link) meta.push(`<a href="${esc(it.link)}" target="_blank" rel="noopener" data-stop>🔗 Link</a>`);
-  return `<li class="it ${it.done ? 'done' : ''} ${isNext ? 'next' : ''}" style="--c:${T.c}">
+  const more = open && (it.conf || it.notes || (it.photos || []).length);
+  const canFold = it.conf || it.notes || (it.photos || []).length;
+  return `<li class="it ${it.done ? 'done' : ''} ${isNext ? 'next' : ''} ${open ? '' : 'folded'}" style="--c:${T.c}">
     <div class="time">${it.start ? esc(fmtTime(it.start)) : '—'}${it.end ? `<small>to ${esc(fmtTime(it.end))}</small>` : ''}</div>
     <div class="dot">${T.i}</div>
     <div class="card" data-act="edit-item" data-id="${it.id}">
       <div class="card-top">
         <div class="ttl"><div class="tag">${T.i} ${T.l}${isNext ? ' · up next' : ''}</div>${esc(it.title || 'Untitled')}</div>
+        ${canFold ? `<button class="fold" data-act="fold-item" data-id="${it.id}" aria-expanded="${open}" aria-label="${open ? 'Collapse' : 'Expand'}">${open ? '▾' : '▸'}</button>` : ''}
         <button class="check" data-act="toggle" data-id="${it.id}" aria-label="Mark done">${it.done ? '✓' : ''}</button>
       </div>
       ${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}
-      ${it.notes ? `<div class="notes">${esc(it.notes)}</div>` : ''}
-      ${photoStrip(it)}
+      ${more && it.notes ? `<div class="notes">${esc(it.notes)}</div>` : ''}
+      ${more ? photoStrip(it) : ''}
     </div>
   </li>`;
 }
@@ -560,24 +591,31 @@ function renderDays() {
   sortDays();
   const el = $('#v-days'), today = todayISO(), now = nowHM();
   const hasToday = S.days.some(d => d.date === today);
-  let html = `<div class="toolbar"><h2>Day by day</h2>${hasToday ? '<button class="pill" data-act="jump-today">☀️ Jump to today</button>' : ''}</div>`;
+  const tools = (hasToday ? '<button class="pill" data-act="jump-today">☀️ Jump to today</button>' : '')
+    + (S.days.length ? `<button class="pill" data-act="fold-all">${allOpen() ? '⊟ Collapse all' : '⊞ Expand all'}</button>` : '');
+  let html = `<div class="toolbar"><h2>Day by day</h2><div class="tools">${tools}</div></div>`;
   if (!S.days.length) html += `<div class="empty"><div class="big">🌵</div>No days yet — tap <b>+ Add day</b> to start your scrapbook.</div>`;
   S.days.forEach((d, idx) => {
     const dt = parseDate(d.date), items = [...d.items].sort(byTime);
-    const nextId = d.date === today ? (items.find(i => !i.done && (i.start || '99') >= now) || {}).id : null;
-    html += `<article class="page ${d.date === today ? 'today' : ''}" id="day-${d.id}">
-      <div class="day-head">
+    const nextId = nextIdOf(d), open = dayOpen(d);
+    const stops = items.filter(i => i.type !== 'note' && i.type !== 'todo').length;
+    const must = items.filter(i => (i.title || '').startsWith('⭐')).length;
+    const sum = [stops ? `${stops} stop${stops === 1 ? '' : 's'}` : (items.length ? `${items.length} entr${items.length === 1 ? 'y' : 'ies'}` : 'Nothing planned yet'),
+                 must ? `${must} ⭐ MUST WATCH` : ''].filter(Boolean).join(' · ');
+    html += `<article class="page ${d.date === today ? 'today' : ''} ${open ? '' : 'folded'}" id="day-${d.id}">
+      <div class="day-head" data-act="fold-day" data-id="${d.id}">
         <div class="datebox">${dt ? `<div class="m">${dt.toLocaleDateString(undefined, {weekday: 'short'})}</div><div class="d">${dt.getDate()}</div><div class="m">${dt.toLocaleDateString(undefined, {month: 'short'})}</div>`
                                  : `<div class="m">Day</div><div class="d">${idx + 1}</div><div class="m">no date</div>`}</div>
         <div class="t">
           <div class="day-label">Day ${idx + 1}${d.date === today ? '<span class="badge">TODAY</span>' : ''}</div>
           <h3 class="day-title">${esc(d.title || 'Untitled day')}</h3>
-          ${d.notes ? `<p class="day-notes">${esc(d.notes)}</p>` : ''}
+          ${open ? (d.notes ? `<p class="day-notes">${esc(d.notes)}</p>` : '') : `<p class="day-sum">${esc(sum)}</p>`}
         </div>
         <button class="pill" data-act="edit-day" data-id="${d.id}">Edit</button>
+        <button class="fold" data-act="fold-day" data-id="${d.id}" aria-expanded="${open}" aria-label="${open ? 'Collapse day' : 'Expand day'}">${open ? '▾' : '▸'}</button>
       </div>
-      ${items.length ? `<ul class="tl">${items.map(i => itemHTML(i, i.id === nextId)).join('')}</ul>` : '<p class="mini">Nothing planned yet.</p>'}
-      <div class="add-row"><button class="add-btn" data-act="add-item" data-day="${d.id}">+ Add flight, meal, place, photo…</button></div>
+      ${open ? `${items.length ? `<ul class="tl">${items.map(i => itemHTML(i, i.id === nextId)).join('')}</ul>` : '<p class="mini">Nothing planned yet.</p>'}
+      <div class="add-row"><button class="add-btn" data-act="add-item" data-day="${d.id}">+ Add flight, meal, place, photo…</button></div>` : ''}
     </article>`;
   });
   el.innerHTML = html;
@@ -819,6 +857,20 @@ document.addEventListener('click', e => {
     case 'lb-next': lb.i = (lb.i + 1) % lb.photos.length; showLB(); break;
     case 'pack-toggle': { const p = S.packing.find(x => x.id === id); p.done = !p.done; save(); renderPack(); break; }
     case 'pack-del': S.packing = S.packing.filter(x => x.id !== id); save(); renderPack(); break;
+    case 'fold-day': {
+      const d = S.days.find(x => x.id === id); if (!d) break;
+      F.d[id] = !dayOpen(d); saveFold(); renderDays(); break;
+    }
+    case 'fold-item': {
+      const d = S.days.find(x => x.items.some(i => i.id === id)); if (!d) break;
+      const it = d.items.find(i => i.id === id);
+      F.i[id] = !itemOpen(it, id === nextIdOf(d)); saveFold(); renderDays(); break;
+    }
+    case 'fold-all': {
+      const v = !allOpen();
+      S.days.forEach(d => { F.d[d.id] = v; d.items.forEach(i => { F.i[i.id] = v; }); });
+      saveFold(); renderDays(); break;
+    }
     case 'jump-today': { const d = S.days.find(x => x.date === todayISO()); document.getElementById('day-' + d.id)?.scrollIntoView({behavior: 'smooth', block: 'start'}); break; }
     case 'offline-copy': closeSheet(); downloadOfflineCopy().catch(() => toast('Could not build the offline copy — are you online?')); break;
     case 'token': askToken(); break;
@@ -851,7 +903,13 @@ $('#importFile').onchange = async e => {
   e.target.value = '';
 };
 
-load().then(d => { S = norm(d); render(); if (needPush) { ver++; flush(); } });
+load().then(d => {
+  S = norm(d); autoOpenToday(); render();
+  // on a trip day, land on today's page once at startup; scrolling stays free afterwards
+  const td = view === 'days' && S.days.find(x => x.date === todayISO());
+  if (td) requestAnimationFrame(() => document.getElementById('day-' + td.id)?.scrollIntoView({block: 'start'}));
+  if (needPush) { ver++; flush(); }
+});
 </script>
 </body>
 </html>
